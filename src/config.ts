@@ -23,6 +23,7 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
+    expandParent: false,
   },
   // 场景在 main.ts 中动态添加
   scene: [],
