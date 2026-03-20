@@ -104,10 +104,12 @@ export class GameOverScene extends Phaser.Scene {
     this.input.keyboard?.once('keydown-ENTER', retryGame);
     this.input.keyboard?.once('keydown-Q', quitToTitle);
 
-    // 触屏/指针支持
+    // 触屏/指针支持：加大内边距扩展触控热区
+    retryText.setPadding(40, 15, 40, 15);
     retryText.setInteractive();
     retryText.once('pointerdown', retryGame);
 
+    quitText.setPadding(40, 15, 40, 15);
     quitText.setInteractive();
     quitText.once('pointerdown', quitToTitle);
   }

@@ -130,10 +130,12 @@ export class VictoryScene extends Phaser.Scene {
     this.input.keyboard?.once('keydown-ENTER', replayGame);
     this.input.keyboard?.once('keydown-Q', quitToTitle);
 
-    // 触屏/指针支持
+    // 触屏/指针支持：加大内边距扩展触控热区
+    replayText.setPadding(40, 15, 40, 15);
     replayText.setInteractive();
     replayText.once('pointerdown', replayGame);
 
+    quitText.setPadding(40, 15, 40, 15);
     quitText.setInteractive();
     quitText.once('pointerdown', quitToTitle);
   }

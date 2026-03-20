@@ -82,10 +82,12 @@ export class PauseScene extends Phaser.Scene {
     this.input.keyboard?.once('keydown-ESC', resumeGame);
     this.input.keyboard?.once('keydown-Q', quitToTitle);
 
-    // 触屏/指针支持
+    // 触屏/指针支持：加大内边距扩展触控热区
+    resumeText.setPadding(40, 15, 40, 15);
     resumeText.setInteractive();
     resumeText.once('pointerdown', resumeGame);
 
+    quitText.setPadding(40, 15, 40, 15);
     quitText.setInteractive();
     quitText.once('pointerdown', quitToTitle);
   }

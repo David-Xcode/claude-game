@@ -100,9 +100,8 @@ export class TitleScene extends Phaser.Scene {
     this.input.keyboard?.once('keydown-ENTER', startGame);
     this.input.keyboard?.once('keydown-SPACE', startGame);
 
-    // 触屏/指针支持
-    startText.setInteractive();
-    startText.once('pointerdown', startGame);
+    // 触屏/指针支持：点击屏幕任意位置即可开始
+    this.input.once('pointerdown', startGame);
 
     this.cameras.main.fadeIn(500);
   }
