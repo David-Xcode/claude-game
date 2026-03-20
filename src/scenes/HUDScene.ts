@@ -2,23 +2,35 @@
 
 import Phaser from 'phaser';
 import { SceneKey, GAME_WIDTH, PLAYER } from '../utils/Constants';
+import { TouchControls } from '../systems/TouchControls';
 
 export class HUDScene extends Phaser.Scene {
   private healthIcons: Phaser.GameObjects.Graphics[] = [];
   private scoreText!: Phaser.GameObjects.Text;
   private livesText!: Phaser.GameObjects.Text;
   private levelText!: Phaser.GameObjects.Text;
+  public touchControls?: TouchControls;
 
   constructor() {
     super({ key: SceneKey.HUD });
   }
 
   create(): void {
+    // 触控设备上创建虚拟按钮
+    if (this.sys.game.device.input.touch) {
+      this.touchControls = new TouchControls(this);
+    }
+
+    // 注册 shutdown 事件清理触控资源（Phaser 3 不自动调用 shutdown 方法）
+    this.events.on('shutdown', this.shutdown, this);
+
     // 血量图标（心形）
     this.createHealthBar(PLAYER.MAX_HEALTH);
 
     // 分数
-    this.scoreText = this.add.text(GAME_WIDTH - 20, 15, 'Score: 0', {
+    // 触控设备上右上角有暂停按钮，分数文字左移避免重叠
+    const scoreX = this.touchControls ? GAME_WIDTH - 80 : GAME_WIDTH - 20;
+    this.scoreText = this.add.text(scoreX, 15, 'Score: 0', {
       fontSize: '16px',
       color: '#ffffff',
       fontFamily: 'monospace',
@@ -103,5 +115,11 @@ export class HUDScene extends Phaser.Scene {
       delay: 2000,
       duration: 1000,
     });
+  }
+
+  // 场景停止时清理触控资源，防止事件监听器泄漏
+  shutdown(): void {
+    this.touchControls?.destroy();
+    this.touchControls = undefined;
   }
 }

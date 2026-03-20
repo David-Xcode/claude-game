@@ -93,6 +93,10 @@ export class GameScene extends Phaser.Scene {
       this.hudScene.updateScore(this.player.score);
       this.hudScene.updateLives(this.player.lives);
       this.hudScene.showLevelName(levelConfig.name);
+      // 触控设备：将 HUD 层的触控按钮接入 InputManager
+      if (this.hudScene.touchControls) {
+        this.inputMgr.setTouchControls(this.hudScene.touchControls);
+      }
     };
     if (hudSys.isActive()) {
       initHUD();
@@ -304,7 +308,7 @@ export class GameScene extends Phaser.Scene {
   update(time: number, delta: number): void {
     if (this.levelComplete) return;
 
-    // 更新玩家
+    // 更新玩家（先消费输入信号）
     this.player.update(delta);
 
     // #3: 更新移动平台位置（使用速度驱动，确保玩家随平台移动）
@@ -330,6 +334,9 @@ export class GameScene extends Phaser.Scene {
 
     // 落地灰尘
     this.emitDust(time);
+
+    // 清除触控单帧标记（必须在所有输入消费完毕后调用）
+    this.inputMgr.update();
   }
 
   private async onLevelComplete(): Promise<void> {

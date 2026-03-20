@@ -12,6 +12,9 @@ export class VictoryScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(0x0a1a0a);
     this.cameras.main.fadeIn(800);
 
+    // 检测是否为触屏设备
+    const isTouch = this.sys.game.device.input.touch;
+
     const title = this.add.text(
       GAME_WIDTH / 2,
       GAME_HEIGHT / 4,
@@ -63,12 +66,14 @@ export class VictoryScene extends Phaser.Scene {
     );
     score.setOrigin(0.5);
 
+    // 重玩按钮
+    const replayLabel = isTouch ? 'Play Again' : '[ ENTER ] Play Again';
     const replayText = this.add.text(
       GAME_WIDTH / 2,
       GAME_HEIGHT / 2 + 100,
-      '[ ENTER ] Play Again',
+      replayLabel,
       {
-        fontSize: '18px',
+        fontSize: '20px',
         color: '#ffffff',
         fontFamily: 'monospace',
       }
@@ -83,12 +88,14 @@ export class VictoryScene extends Phaser.Scene {
       repeat: -1,
     });
 
+    // 返回标题按钮
+    const quitLabel = isTouch ? 'Title Screen' : '[ Q ] Title Screen';
     const quitText = this.add.text(
       GAME_WIDTH / 2,
       GAME_HEIGHT / 2 + 135,
-      '[ Q ] Title Screen',
+      quitLabel,
       {
-        fontSize: '16px',
+        fontSize: '18px',
         color: '#aaaaaa',
         fontFamily: 'monospace',
       }
@@ -98,19 +105,37 @@ export class VictoryScene extends Phaser.Scene {
     // 撒花粒子效果
     this.createCelebrationParticles();
 
-    this.input.keyboard!.once('keydown-ENTER', () => {
+    // 防止重复触发的重玩逻辑
+    let replayStarted = false;
+    const replayGame = () => {
+      if (replayStarted) return;
+      replayStarted = true;
       this.cameras.main.fadeOut(500);
       this.cameras.main.once('camerafadeoutcomplete', () => {
         this.scene.start(SceneKey.GAME, { level: 0, score: 0, lives: 3 });
       });
-    });
+    };
 
-    this.input.keyboard!.once('keydown-Q', () => {
+    // 防止重复触发的退出逻辑
+    let quitStarted = false;
+    const quitToTitle = () => {
+      if (quitStarted) return;
+      quitStarted = true;
       this.cameras.main.fadeOut(500);
       this.cameras.main.once('camerafadeoutcomplete', () => {
         this.scene.start(SceneKey.TITLE);
       });
-    });
+    };
+
+    this.input.keyboard?.once('keydown-ENTER', replayGame);
+    this.input.keyboard?.once('keydown-Q', quitToTitle);
+
+    // 触屏/指针支持
+    replayText.setInteractive();
+    replayText.once('pointerdown', replayGame);
+
+    quitText.setInteractive();
+    quitText.once('pointerdown', quitToTitle);
   }
 
   private createCelebrationParticles(): void {

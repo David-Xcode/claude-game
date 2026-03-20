@@ -11,6 +11,9 @@ export class TitleScene extends Phaser.Scene {
   create(): void {
     this.cameras.main.setBackgroundColor(0x1a1a2e);
 
+    // 检测是否为触屏设备
+    const isTouch = this.sys.game.device.input.touch;
+
     // 标题
     const title = this.add.text(
       GAME_WIDTH / 2,
@@ -37,13 +40,16 @@ export class TitleScene extends Phaser.Scene {
       ease: 'Sine.easeInOut',
     });
 
-    // 开始按钮
+    // 开始按钮（触屏/非触屏文案不同）
+    const startLabel = isTouch
+      ? '[ TAP TO START ]'
+      : '[ PRESS ENTER / TAP TO START ]';
     const startText = this.add.text(
       GAME_WIDTH / 2,
       GAME_HEIGHT / 2 + 40,
-      '[ PRESS ENTER TO START ]',
+      startLabel,
       {
-        fontSize: '18px',
+        fontSize: '20px',
         color: '#ffffff',
         fontFamily: 'monospace',
       }
@@ -59,13 +65,16 @@ export class TitleScene extends Phaser.Scene {
       repeat: -1,
     });
 
-    // 操作说明
+    // 操作说明（触屏/非触屏文案不同）
+    const controlsLabel = isTouch
+      ? 'D-Pad: Move  |  Button: Jump\nPause button: top right'
+      : 'Arrow Keys / WASD - Move    |    Up / W / Space - Jump\nESC - Pause    |    F1 - Debug';
     const controls = this.add.text(
       GAME_WIDTH / 2,
       GAME_HEIGHT / 2 + 100,
-      'Arrow Keys / WASD - Move    |    Up / W / Space - Jump\nESC - Pause    |    F1 - Debug',
+      controlsLabel,
       {
-        fontSize: '12px',
+        fontSize: '14px',
         color: '#888888',
         fontFamily: 'monospace',
         align: 'center',
@@ -76,20 +85,24 @@ export class TitleScene extends Phaser.Scene {
     // 装饰：小角色预览
     this.createDecoCharacters();
 
-    // 按键监听
-    this.input.keyboard!.once('keydown-ENTER', () => {
+    // 防止重复触发的开始逻辑
+    let started = false;
+    const startGame = () => {
+      if (started) return;
+      started = true;
       this.cameras.main.fadeOut(500);
       this.cameras.main.once('camerafadeoutcomplete', () => {
         this.scene.start(SceneKey.GAME, { level: 0, score: 0, lives: 3 });
       });
-    });
+    };
 
-    this.input.keyboard!.once('keydown-SPACE', () => {
-      this.cameras.main.fadeOut(500);
-      this.cameras.main.once('camerafadeoutcomplete', () => {
-        this.scene.start(SceneKey.GAME, { level: 0, score: 0, lives: 3 });
-      });
-    });
+    // 按键监听
+    this.input.keyboard?.once('keydown-ENTER', startGame);
+    this.input.keyboard?.once('keydown-SPACE', startGame);
+
+    // 触屏/指针支持
+    startText.setInteractive();
+    startText.once('pointerdown', startGame);
 
     this.cameras.main.fadeIn(500);
   }

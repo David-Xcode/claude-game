@@ -2,7 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <!-- PWA 相关元标签 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#000000">
+  <link rel="manifest" href="./manifest.json">
   <title>Pixel Adventure</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -13,11 +18,48 @@
       align-items: center;
       min-height: 100vh;
       overflow: hidden;
+      user-select: none;
+      -webkit-touch-callout: none;
+      overscroll-behavior: none;
     }
-    canvas { display: block; }
+    canvas { display: block; touch-action: none; }
+
+    /* 竖屏提示遮罩 */
+    #rotate-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      font-family: monospace;
+      font-size: 20px;
+      text-align: center;
+    }
+    #rotate-overlay .rotate-icon {
+      font-size: 60px;
+      animation: rotate-hint 2s ease-in-out infinite;
+    }
+    @keyframes rotate-hint {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(90deg); }
+    }
+    @media (orientation: portrait) {
+      #rotate-overlay { display: flex; }
+    }
   </style>
 </head>
 <body>
+  <!-- 竖屏旋转提示 -->
+  <div id="rotate-overlay">
+    <div class="rotate-message">
+      <div class="rotate-icon">📱</div>
+      <p>Please rotate your device</p>
+    </div>
+  </div>
+
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

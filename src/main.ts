@@ -24,3 +24,13 @@ const config: Phaser.Types.Core.GameConfig = {
 };
 
 new Phaser.Game(config);
+
+// 注册 Service Worker（仅生产环境）
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  navigator.serviceWorker.register('./sw.js');
+}
+
+// 尝试锁定横屏方向
+screen.orientation?.lock?.('landscape').catch(() => {
+  // 不支持方向锁定时静默失败
+});

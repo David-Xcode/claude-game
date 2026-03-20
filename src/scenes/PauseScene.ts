@@ -9,6 +9,9 @@ export class PauseScene extends Phaser.Scene {
   }
 
   create(): void {
+    // 检测是否为触屏设备
+    const isTouch = this.sys.game.device.input.touch;
+
     // 半透明背景
     this.add.rectangle(
       GAME_WIDTH / 2,
@@ -32,42 +35,58 @@ export class PauseScene extends Phaser.Scene {
     );
     title.setOrigin(0.5);
 
+    // 继续游戏按钮
+    const resumeLabel = isTouch ? 'Resume' : '[ ESC ] Resume';
     const resumeText = this.add.text(
       GAME_WIDTH / 2,
       GAME_HEIGHT / 2,
-      '[ ESC ] Resume',
+      resumeLabel,
       {
-        fontSize: '18px',
+        fontSize: '20px',
         color: '#aaffaa',
         fontFamily: 'monospace',
       }
     );
     resumeText.setOrigin(0.5);
 
+    // 退出按钮
+    const quitLabel = isTouch ? 'Quit to Title' : '[ Q ] Quit to Title';
     const quitText = this.add.text(
       GAME_WIDTH / 2,
       GAME_HEIGHT / 2 + 40,
-      '[ Q ] Quit to Title',
+      quitLabel,
       {
-        fontSize: '18px',
+        fontSize: '20px',
         color: '#ffaaaa',
         fontFamily: 'monospace',
       }
     );
     quitText.setOrigin(0.5);
 
-    // 按键
-    this.input.keyboard!.once('keydown-ESC', () => {
+    // 继续游戏逻辑
+    const resumeGame = () => {
       this.scene.resume(SceneKey.GAME);
       this.scene.stop();
-    });
+    };
 
-    this.input.keyboard!.once('keydown-Q', () => {
+    // 退出到标题逻辑
+    const quitToTitle = () => {
       this.scene.stop(SceneKey.GAME);
       this.scene.stop(SceneKey.HUD);
       // 先启动 Title 再停止自身，避免在被销毁的上下文中操作
       this.scene.start(SceneKey.TITLE);
       this.scene.stop();
-    });
+    };
+
+    // 按键
+    this.input.keyboard?.once('keydown-ESC', resumeGame);
+    this.input.keyboard?.once('keydown-Q', quitToTitle);
+
+    // 触屏/指针支持
+    resumeText.setInteractive();
+    resumeText.once('pointerdown', resumeGame);
+
+    quitText.setInteractive();
+    quitText.once('pointerdown', quitToTitle);
   }
 }
