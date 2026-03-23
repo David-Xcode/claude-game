@@ -16,7 +16,13 @@
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["src/shared/*"],
+      "@games/*": ["src/games/*"],
+      "@hub/*": ["src/hub/*"]
+    }
   },
   "include": ["src"]
 }

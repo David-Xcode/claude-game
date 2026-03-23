@@ -1,7 +1,7 @@
 // Phaser 游戏全局配置
 
 import Phaser from 'phaser';
-import { GAME_WIDTH, GAME_HEIGHT, GRAVITY } from './utils/Constants';
+import { GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
 
 export const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -13,7 +13,7 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   physics: {
     default: 'arcade',
     arcade: {
-      gravity: { x: 0, y: GRAVITY },
+      gravity: { x: 0, y: 0 },
       debug: false,
     },
   },
