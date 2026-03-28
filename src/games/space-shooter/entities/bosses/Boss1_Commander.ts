@@ -8,33 +8,19 @@ import Phaser from 'phaser';
 import { ShooterEnemy } from '../ShooterEnemy';
 import { PowerUpType, SHOOTER_COLORS, GAME_WIDTH } from '@shared/utils/Constants';
 import { BulletPool } from '../../systems/BulletPool';
+import { BossBase } from './BossBase';
 
 const TEXTURE_KEY = 'boss1_commander';
 const W = 120;
 const H = 80;
 const BULLET_SPEED = 220;
 
-export class Boss1Commander extends ShooterEnemy {
-  private bulletPool: BulletPool;
-  private playerRef: Phaser.GameObjects.Sprite;
-
-  /** 阶段变化回调 */
-  onPhaseChange: ((phase: number) => void) | null = null;
+export class Boss1Commander extends BossBase {
   /** 无人机生成回调 */
   onSpawnDrones: ((x: number, y: number, count: number) => void) | null = null;
 
-  /** 当前阶段 1-3 */
-  private phase = 1;
-  /** 左右移动方向 */
+  /** 左右移动方向（仅 Boss1 使用） */
   private moveDir = 1;
-  /** 上次开火时间 */
-  private lastFireTime = 0;
-  /** 上次召唤时间 */
-  private lastSpawnTime = 0;
-  /** 入场动画是否完成 */
-  private entered = false;
-  /** 目标 y */
-  private targetY = 60;
 
   constructor(
     scene: Phaser.Scene,
@@ -49,59 +35,26 @@ export class Boss1Commander extends ShooterEnemy {
       { type: PowerUpType.WEAPON_SPREAD, weight: 0.30 },
       { type: PowerUpType.BOMB, weight: 0.20 },
       { type: PowerUpType.HEALTH, weight: 0.20 },
-    ]);
-
-    this.bulletPool = bulletPool;
-    this.playerRef = playerRef;
+    ], bulletPool, playerRef, 60, 40);
 
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setSize(W - 10, H - 10);
-    body.setVelocityY(40); // 缓慢入场
   }
 
   // ═══════════════════════════════════════════════
-  // 阶段管理
+  // 入场完成
   // ═══════════════════════════════════════════════
 
-  private checkPhaseTransition(): void {
-    const hpPercent = this.hp / this.maxHp;
-    let newPhase = 1;
-
-    if (hpPercent <= 0.30) {
-      newPhase = 3;
-    } else if (hpPercent <= 0.60) {
-      newPhase = 2;
-    }
-
-    if (newPhase !== this.phase) {
-      this.phase = newPhase;
-      if (this.onPhaseChange) {
-        this.onPhaseChange(this.phase);
-      }
-    }
+  protected onEntryComplete(time: number): void {
+    this.lastFireTime = time;
+    this.lastSpawnTime = time;
   }
 
   // ═══════════════════════════════════════════════
-  // 行为
+  // 阶段行为
   // ═══════════════════════════════════════════════
 
-  updateBehavior(time: number, delta: number): void {
-    const body = this.body as Phaser.Physics.Arcade.Body;
-
-    // 入场阶段
-    if (!this.entered) {
-      if (this.y >= this.targetY) {
-        this.entered = true;
-        body.setVelocityY(0);
-        this.lastFireTime = time;
-        this.lastSpawnTime = time;
-      }
-      return;
-    }
-
-    // 检查阶段转换
-    this.checkPhaseTransition();
-
+  protected updatePhase(time: number, delta: number): void {
     // 左右移动
     const speed = this.phase === 1 ? 60 : this.phase === 2 ? 100 : 140;
     this.x += this.moveDir * speed * (delta / 1000);
@@ -131,6 +84,10 @@ export class Boss1Commander extends ShooterEnemy {
       }
     }
   }
+
+  // ═══════════════════════════════════════════════
+  // 攻击模式
+  // ═══════════════════════════════════════════════
 
   /** 各阶段开火模式 */
   private handleFiring(time: number): void {
@@ -217,14 +174,6 @@ export class Boss1Commander extends ShooterEnemy {
       const vy = Math.sin(angle) * BULLET_SPEED * 0.8;
       this.bulletPool.fire(this.x, this.y, vx, vy, 1);
     }
-  }
-
-  // ═══════════════════════════════════════════════
-  // 不被屏幕边界回收
-  // ═══════════════════════════════════════════════
-
-  isOffScreen(): boolean {
-    return false; // Boss 永不自动回收
   }
 
   // ═══════════════════════════════════════════════

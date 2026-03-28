@@ -8,30 +8,21 @@ import Phaser from 'phaser';
 import { ShooterEnemy } from '../ShooterEnemy';
 import { PowerUpType, SHOOTER_COLORS, GAME_WIDTH } from '@shared/utils/Constants';
 import { BulletPool } from '../../systems/BulletPool';
+import { BossBase } from './BossBase';
 
 const TEXTURE_KEY = 'boss3_mothership';
 const W = 200;
 const H = 120;
 const BULLET_SPEED = 180;
 
-export class Boss3Mothership extends ShooterEnemy {
-  private bulletPool: BulletPool;
-  private playerRef: Phaser.GameObjects.Sprite;
-
-  onPhaseChange: ((phase: number) => void) | null = null;
+export class Boss3Mothership extends BossBase {
   /** 释放旋转追踪器的回调 */
   onSpawnSpinners: ((x: number, y: number, count: number) => void) | null = null;
 
-  private phase = 1;
-  private entered = false;
-  private targetY = 60;
-  private moveTime = 0;
-
-  /** 各武器计时器 */
+  /** 各武器计时器（Boss3 特有） */
   private lastAimedTime = 0;
   private lastSpiralTime = 0;
   private lastRingTime = 0;
-  private lastSpawnTime = 0;
   /** 螺旋弹角度偏移 */
   private spiralAngle = 0;
 
@@ -52,63 +43,37 @@ export class Boss3Mothership extends ShooterEnemy {
       { type: PowerUpType.BOMB, weight: 0.25 },
       { type: PowerUpType.HEALTH, weight: 0.25 },
       { type: PowerUpType.SCORE_BONUS, weight: 0.20 },
-    ]);
-
-    this.bulletPool = bulletPool;
-    this.playerRef = playerRef;
+    ], bulletPool, playerRef, 60, 25);
 
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setSize(W - 30, H - 30);
-    body.setVelocityY(25);
   }
 
   // ═══════════════════════════════════════════════
-  // 阶段管理
+  // 入场完成
   // ═══════════════════════════════════════════════
 
-  private checkPhaseTransition(): void {
-    const hpPercent = this.hp / this.maxHp;
-    let newPhase = 1;
-
-    if (hpPercent <= 0.30) {
-      newPhase = 3;
-    } else if (hpPercent <= 0.60) {
-      newPhase = 2;
-    }
-
-    if (newPhase !== this.phase) {
-      this.phase = newPhase;
-      if (this.onPhaseChange) {
-        this.onPhaseChange(this.phase);
-      }
-    }
+  protected onEntryComplete(time: number): void {
+    this.lastAimedTime = time;
+    this.lastSpiralTime = time;
+    this.lastRingTime = time;
+    this.lastSpawnTime = time;
   }
 
   // ═══════════════════════════════════════════════
-  // 行为
+  // 行为（覆盖基类以处理 dying 标志）
   // ═══════════════════════════════════════════════
 
   updateBehavior(time: number, delta: number): void {
     if (this.dying) return;
+    super.updateBehavior(time, delta);
+  }
 
-    const body = this.body as Phaser.Physics.Arcade.Body;
+  // ═══════════════════════════════════════════════
+  // 阶段行为
+  // ═══════════════════════════════════════════════
 
-    // 入场
-    if (!this.entered) {
-      if (this.y >= this.targetY) {
-        this.entered = true;
-        body.setVelocityY(0);
-        this.lastAimedTime = time;
-        this.lastSpiralTime = time;
-        this.lastRingTime = time;
-        this.lastSpawnTime = time;
-      }
-      return;
-    }
-
-    this.checkPhaseTransition();
-    this.moveTime += delta;
-
+  protected updatePhase(time: number, delta: number): void {
     switch (this.phase) {
       case 1:
         this.phase1Behavior(time, delta);
@@ -280,13 +245,11 @@ export class Boss3Mothership extends ShooterEnemy {
     if (this.dying) return;
     this.dying = true;
 
-    // 立即标记为非活跃（让 WaveManager 检测到 Boss 已被击败）
-    this.setActive(false);
+    // 先调用基类 die()，处理掉落逻辑 + setActive(false) + setVisible(false) + body.enable = false
+    super.die();
 
-    // 禁用物理体，但保持可见做死亡动画
-    if (this.body) {
-      (this.body as Phaser.Physics.Arcade.Body).enable = false;
-    }
+    // 重新显示，用于死亡动画
+    this.setVisible(true);
 
     // 3 秒内多次爆炸
     const explosionCount = 8;
@@ -314,10 +277,6 @@ export class Boss3Mothership extends ShooterEnemy {
       this.setActive(false);
       this.setVisible(false);
     });
-  }
-
-  isOffScreen(): boolean {
-    return false;
   }
 
   // ═══════════════════════════════════════════════

@@ -8,28 +8,20 @@ import Phaser from 'phaser';
 import { ShooterEnemy } from '../ShooterEnemy';
 import { PowerUpType, SHOOTER_COLORS, GAME_WIDTH } from '@shared/utils/Constants';
 import { BulletPool } from '../../systems/BulletPool';
+import { BossBase } from './BossBase';
 
 const TEXTURE_KEY = 'boss2_skyfortress';
 const W = 160;
 const H = 100;
 const BULLET_SPEED = 200;
 
-export class Boss2SkyFortress extends ShooterEnemy {
-  private bulletPool: BulletPool;
-  private playerRef: Phaser.GameObjects.Sprite;
-
-  onPhaseChange: ((phase: number) => void) | null = null;
+export class Boss2SkyFortress extends BossBase {
   /** 释放护盾敌人的回调 */
   onSpawnShields: ((x: number, y: number, count: number) => void) | null = null;
 
-  private phase = 1;
-  private entered = false;
-  private targetY = 50;
-
-  /** 开火计时 */
+  /** 开火计时（Boss2 特有的双计时器） */
   private lastSideFireTime = 0;
   private lastCenterFireTime = 0;
-  private lastSpawnTime = 0;
   /** 左右交替标记 */
   private fireFromLeft = true;
 
@@ -38,9 +30,6 @@ export class Boss2SkyFortress extends ShooterEnemy {
   private chargeStartTime = 0;
   private chargeInterval = 3000;
   private vulnerableUntil = 0;
-
-  /** 8 字运动参数 */
-  private moveTime = 0;
 
   constructor(
     scene: Phaser.Scene,
@@ -55,60 +44,27 @@ export class Boss2SkyFortress extends ShooterEnemy {
       { type: PowerUpType.WEAPON_LASER, weight: 0.30 },
       { type: PowerUpType.BOMB, weight: 0.25 },
       { type: PowerUpType.HEALTH, weight: 0.20 },
-    ]);
-
-    this.bulletPool = bulletPool;
-    this.playerRef = playerRef;
+    ], bulletPool, playerRef, 50, 30);
 
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setSize(W - 20, H - 20);
-    body.setVelocityY(30);
   }
 
   // ═══════════════════════════════════════════════
-  // 阶段管理
+  // 入场完成
   // ═══════════════════════════════════════════════
 
-  private checkPhaseTransition(): void {
-    const hpPercent = this.hp / this.maxHp;
-    let newPhase = 1;
-
-    if (hpPercent <= 0.30) {
-      newPhase = 3;
-    } else if (hpPercent <= 0.60) {
-      newPhase = 2;
-    }
-
-    if (newPhase !== this.phase) {
-      this.phase = newPhase;
-      if (this.onPhaseChange) {
-        this.onPhaseChange(this.phase);
-      }
-    }
+  protected onEntryComplete(time: number): void {
+    this.lastSideFireTime = time;
+    this.lastCenterFireTime = time;
+    this.lastSpawnTime = time;
   }
 
   // ═══════════════════════════════════════════════
-  // 行为
+  // 阶段行为
   // ═══════════════════════════════════════════════
 
-  updateBehavior(time: number, delta: number): void {
-    const body = this.body as Phaser.Physics.Arcade.Body;
-
-    // 入场
-    if (!this.entered) {
-      if (this.y >= this.targetY) {
-        this.entered = true;
-        body.setVelocityY(0);
-        this.lastSideFireTime = time;
-        this.lastCenterFireTime = time;
-        this.lastSpawnTime = time;
-      }
-      return;
-    }
-
-    this.checkPhaseTransition();
-    this.moveTime += delta;
-
+  protected updatePhase(time: number, delta: number): void {
     switch (this.phase) {
       case 1:
         this.phase1Behavior(time);
@@ -213,6 +169,10 @@ export class Boss2SkyFortress extends ShooterEnemy {
     }
   }
 
+  // ═══════════════════════════════════════════════
+  // 攻击模式
+  // ═══════════════════════════════════════════════
+
   /** 侧炮交替瞄准射击 */
   private fireSideAimed(): void {
     if (!this.playerRef.active) return;
@@ -264,10 +224,6 @@ export class Boss2SkyFortress extends ShooterEnemy {
         }
       });
     }
-  }
-
-  isOffScreen(): boolean {
-    return false;
   }
 
   // ═══════════════════════════════════════════════
