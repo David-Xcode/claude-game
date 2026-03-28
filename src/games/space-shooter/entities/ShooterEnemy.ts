@@ -81,15 +81,13 @@ export abstract class ShooterEnemy extends Phaser.Physics.Arcade.Sprite {
     return false;
   }
 
-  /** 死亡：从场景和组中完全移除，释放资源 */
+  /** 死亡：禁用并隐藏（保留在组中以免迭代时修改数组） */
   die(): void {
     this.setActive(false);
     this.setVisible(false);
     if (this.body) {
       (this.body as Phaser.Physics.Arcade.Body).enable = false;
     }
-    // 从所有组和场景中移除，避免死亡敌人在碰撞检测中堆积
-    this.destroy();
   }
 
   /** 获取得分值（供碰撞回调调用） */

@@ -89,6 +89,7 @@ export class BulletPool {
 
   /** 清除所有活跃子弹（炸弹、关卡切换时使用） */
   clear(): void {
+    if (!this.group?.scene) return; // 场景已销毁时安全跳过
     this.group.getChildren().forEach((child) => {
       const bullet = child as Bullet;
       if (bullet.active) {

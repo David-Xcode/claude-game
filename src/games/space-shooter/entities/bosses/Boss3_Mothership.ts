@@ -311,10 +311,8 @@ export class Boss3Mothership extends ShooterEnemy {
 
     // 最终销毁
     this.scene.time.delayedCall(explosionCount * 350 + 200, () => {
-      if (!this.scene?.sys?.isActive()) return;
       this.setActive(false);
       this.setVisible(false);
-      this.destroy();
     });
   }
 

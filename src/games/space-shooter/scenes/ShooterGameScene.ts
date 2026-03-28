@@ -74,10 +74,10 @@ export class ShooterGameScene extends Phaser.Scene {
   private gameOverTriggered = false;
   private respawning = false;
 
-  // 敌人组（物理 Group，碰撞检测需要）
-  public enemies!: Phaser.Physics.Arcade.Group;
+  // 敌人组
+  public enemies!: Phaser.GameObjects.Group;
   // 道具组
-  public powerups!: Phaser.Physics.Arcade.Group;
+  public powerups!: Phaser.GameObjects.Group;
 
   constructor() {
     super({ key: SceneKey.SHOOTER_GAME });
@@ -114,9 +114,9 @@ export class ShooterGameScene extends Phaser.Scene {
     // 初始化爆炸管理器
     this.explosionMgr = new ExplosionManager(this);
 
-    // 初始化敌人组 & 道具组（物理 Group，确保碰撞检测可靠）
-    this.enemies = this.physics.add.group({ runChildUpdate: true, allowGravity: false });
-    this.powerups = this.physics.add.group({ runChildUpdate: true, allowGravity: false });
+    // 初始化敌人组 & 道具组（普通 Group，子 sprite 自行管理物理体）
+    this.enemies = this.add.group({ runChildUpdate: true });
+    this.powerups = this.add.group({ runChildUpdate: true });
 
     // 初始化玩家
     this.player = new ShooterPlayer(
@@ -186,6 +186,9 @@ export class ShooterGameScene extends Phaser.Scene {
     // 更新波次管理器
     this.waveManager.update(time, delta);
 
+    // 玩家子弹 vs 敌人碰撞（逐帧 Sprite vs Group 检测）
+    this.checkBulletEnemyCollisions();
+
     // 追踪弹逻辑：调整 homing 子弹速度方向朝最近敌人
     this.updateHomingBullets();
 
@@ -228,18 +231,10 @@ export class ShooterGameScene extends Phaser.Scene {
   // ═══════════════════════════════════════════════
 
   private setupCollisions(): void {
-    // 玩家子弹 vs 敌人 → 敌人受伤
-    this.physics.add.overlap(
-      this.playerBullets.group,
-      this.enemies,
-      (bulletObj, enemyObj) => {
-        this.onBulletHitEnemy(bulletObj as Phaser.GameObjects.GameObject, enemyObj as Phaser.GameObjects.GameObject);
-      },
-      undefined,
-      this
-    );
+    // 注意：Phaser v3.90 中 PhysicsGroup vs 普通 Group 的 add.overlap 不可靠
+    // 涉及普通 Group 的碰撞改为在 update() 中通过 Sprite vs Group 方式逐帧检测
 
-    // 敌人子弹 vs 玩家 → 玩家受伤
+    // 敌人子弹 vs 玩家 → 玩家受伤（Sprite vs Sprite，可靠）
     this.physics.add.overlap(
       this.enemyBullets.group,
       this.player,
@@ -250,7 +245,7 @@ export class ShooterGameScene extends Phaser.Scene {
       this
     );
 
-    // 玩家 vs 敌人 → 接触伤害
+    // 玩家 vs 敌人 → 接触伤害（Sprite vs 普通 Group，可靠）
     this.physics.add.overlap(
       this.player,
       this.enemies,
@@ -261,7 +256,7 @@ export class ShooterGameScene extends Phaser.Scene {
       this
     );
 
-    // 玩家 vs 道具 → 拾取
+    // 玩家 vs 道具 → 拾取（Sprite vs 普通 Group，可靠）
     this.physics.add.overlap(
       this.player,
       this.powerups,
@@ -271,6 +266,23 @@ export class ShooterGameScene extends Phaser.Scene {
       undefined,
       this
     );
+  }
+
+  /** 玩家子弹 vs 敌人碰撞检测（逐帧 Sprite vs Group，绕过 PhysicsGroup vs Group 的 bug） */
+  private checkBulletEnemyCollisions(): void {
+    const bullets = this.playerBullets.group.getChildren();
+    for (const bullet of bullets) {
+      if (!bullet.active) continue;
+      this.physics.overlap(
+        bullet,
+        this.enemies,
+        (_b, enemyObj) => {
+          this.onBulletHitEnemy(bullet, enemyObj as Phaser.GameObjects.GameObject);
+        },
+        undefined,
+        this
+      );
+    }
   }
 
   // ═══════════════════════════════════════════════
