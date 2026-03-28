@@ -1,4 +1,4 @@
-// 射击游戏核心场景：整合所有系统，处理碰撞、阶段推进、事件广播
+// 射击游戏核心场景：整合所有系统，处理阶段推进、事件广播
 
 import Phaser from 'phaser';
 import {
@@ -7,7 +7,6 @@ import {
   GAME_HEIGHT,
   SHOOTER,
   SHOOTER_DEPTH,
-  WeaponType,
 } from '@shared/utils/Constants';
 import { ScrollingBackground } from '../systems/ScrollingBackground';
 import { ShooterPlayer } from '../entities/ShooterPlayer';
@@ -16,6 +15,8 @@ import { BulletPool } from '../systems/BulletPool';
 import { WaveManager } from '../systems/WaveManager';
 import { ExplosionManager } from '../systems/ExplosionManager';
 import { ScoreManager } from '../systems/ScoreManager';
+import { CollisionHandler } from '../systems/CollisionHandler';
+import { updateHomingBullets } from '../systems/HomingBulletSystem';
 import { ShooterHUDScene } from './ShooterHUDScene';
 
 // ═══════════════════════════════════════════════
@@ -64,6 +65,7 @@ export class ShooterGameScene extends Phaser.Scene {
   private waveManager!: WaveManager;
   private explosionMgr!: ExplosionManager;
   private scoreMgr!: ScoreManager;
+  private collisionHandler!: CollisionHandler;
   private hudScene!: ShooterHUDScene;
 
   // 游戏状态
@@ -141,6 +143,20 @@ export class ShooterGameScene extends Phaser.Scene {
       this.powerups
     );
 
+    // 初始化碰撞处理器
+    this.collisionHandler = new CollisionHandler({
+      scene: this,
+      player: this.player,
+      enemies: this.enemies,
+      powerups: this.powerups,
+      playerBullets: this.playerBullets,
+      enemyBullets: this.enemyBullets,
+      explosionMgr: this.explosionMgr,
+      scoreMgr: this.scoreMgr,
+      onPlayerDamage: (amount) => this.damagePlayer(amount),
+    });
+    this.collisionHandler.setup();
+
     // 启动 HUD 并行场景
     this.scene.launch(SceneKey.SHOOTER_HUD);
     this.hudScene = this.scene.get(SceneKey.SHOOTER_HUD) as ShooterHUDScene;
@@ -160,9 +176,6 @@ export class ShooterGameScene extends Phaser.Scene {
     } else {
       this.hudScene.events.once('create', initHUD);
     }
-
-    // 设置碰撞组
-    this.setupCollisions();
 
     // 注册 shutdown 回调，确保场景停止时执行清理
     this.events.on('shutdown', this.shutdown, this);
@@ -187,10 +200,10 @@ export class ShooterGameScene extends Phaser.Scene {
     this.waveManager.update(time, delta);
 
     // 玩家子弹 vs 敌人碰撞（逐帧 Sprite vs Group 检测）
-    this.checkBulletEnemyCollisions();
+    this.collisionHandler.update();
 
     // 追踪弹逻辑：调整 homing 子弹速度方向朝最近敌人
-    this.updateHomingBullets();
+    updateHomingBullets(this.playerBullets, this.enemies);
 
     // 更新子弹池（清理超出屏幕的子弹）
     this.playerBullets.update();
@@ -224,177 +237,6 @@ export class ShooterGameScene extends Phaser.Scene {
 
     // 清除触控单帧标记
     this.inputMgr.update();
-  }
-
-  // ═══════════════════════════════════════════════
-  // 碰撞设置
-  // ═══════════════════════════════════════════════
-
-  private setupCollisions(): void {
-    // 注意：Phaser v3.90 中 PhysicsGroup vs 普通 Group 的 add.overlap 不可靠
-    // 涉及普通 Group 的碰撞改为在 update() 中通过 Sprite vs Group 方式逐帧检测
-
-    // 敌人子弹 vs 玩家 → 玩家受伤（Sprite vs Sprite，可靠）
-    this.physics.add.overlap(
-      this.enemyBullets.group,
-      this.player,
-      (bulletObj) => {
-        this.onEnemyBulletHitPlayer(bulletObj as Phaser.GameObjects.GameObject);
-      },
-      undefined,
-      this
-    );
-
-    // 玩家 vs 敌人 → 接触伤害（Sprite vs 普通 Group，可靠）
-    this.physics.add.overlap(
-      this.player,
-      this.enemies,
-      (_playerObj, enemyObj) => {
-        this.onPlayerContactEnemy(enemyObj as Phaser.GameObjects.GameObject);
-      },
-      undefined,
-      this
-    );
-
-    // 玩家 vs 道具 → 拾取（Sprite vs 普通 Group，可靠）
-    this.physics.add.overlap(
-      this.player,
-      this.powerups,
-      (_playerObj, powerupObj) => {
-        this.onCollectPowerup(powerupObj as Phaser.GameObjects.GameObject);
-      },
-      undefined,
-      this
-    );
-  }
-
-  /** 玩家子弹 vs 敌人碰撞检测（逐帧 Sprite vs Group，绕过 PhysicsGroup vs Group 的 bug） */
-  private checkBulletEnemyCollisions(): void {
-    const bullets = this.playerBullets.group.getChildren();
-    for (const bullet of bullets) {
-      if (!bullet.active) continue;
-      this.physics.overlap(
-        bullet,
-        this.enemies,
-        (_b, enemyObj) => {
-          this.onBulletHitEnemy(bullet, enemyObj as Phaser.GameObjects.GameObject);
-        },
-        undefined,
-        this
-      );
-    }
-  }
-
-  // ═══════════════════════════════════════════════
-  // 碰撞回调
-  // ═══════════════════════════════════════════════
-
-  /** 玩家子弹命中敌人 */
-  private onBulletHitEnemy(
-    bulletObj: Phaser.GameObjects.GameObject,
-    enemyObj: Phaser.GameObjects.GameObject
-  ): void {
-    const bullet = bulletObj as Phaser.GameObjects.GameObject & { damage?: number };
-    const enemy = enemyObj as Phaser.GameObjects.GameObject & {
-      takeDamage?: (dmg: number) => boolean;
-      getScoreValue?: () => number;
-      x?: number;
-      y?: number;
-    };
-
-    // 穿透子弹不回收（激光 Lv3）
-    if (!(bulletObj as any).isPiercing) {
-      this.playerBullets.kill(bulletObj);
-    }
-
-    if (!enemy.active || typeof enemy.takeDamage !== 'function') return;
-
-    // 预存位置和分值（die() 内会 destroy() 移除实体）
-    const ex = (enemy as any).x ?? 0;
-    const ey = (enemy as any).y ?? 0;
-    const scoreValue = typeof enemy.getScoreValue === 'function' ? enemy.getScoreValue() : 100;
-
-    const damage = bullet.damage ?? 1;
-    const killed = enemy.takeDamage(damage);
-
-    if (killed) {
-      // 播放爆炸
-      this.explosionMgr.explode(ex, ey);
-      this.scoreMgr.addKill(scoreValue);
-      this.events.emit(SHOOTER_EVENTS.SCORE_CHANGED, this.scoreMgr.score);
-      this.events.emit(SHOOTER_EVENTS.COMBO_CHANGED, this.scoreMgr.combo, this.scoreMgr.multiplier);
-    }
-  }
-
-  /** 敌人子弹命中玩家 */
-  private onEnemyBulletHitPlayer(bulletObj: Phaser.GameObjects.GameObject): void {
-    if (!this.player.isAlive || this.player.isInvincible) return;
-
-    this.enemyBullets.kill(bulletObj);
-    this.damagePlayer(1);
-  }
-
-  /** 玩家与敌人直接接触 */
-  private onPlayerContactEnemy(enemyObj: Phaser.GameObjects.GameObject): void {
-    if (!this.player.isAlive || this.player.isInvincible) return;
-    if (!enemyObj.active) return;
-
-    this.damagePlayer(1);
-
-    // 接触伤害同时对敌人造成 1 点伤害
-    const enemy = enemyObj as any;
-    if (typeof enemy.takeDamage === 'function') {
-      // 预存位置和分值（die() 内会 destroy() 移除实体）
-      const ex = enemy.x ?? 0;
-      const ey = enemy.y ?? 0;
-      const scoreValue = typeof enemy.getScoreValue === 'function' ? enemy.getScoreValue() : 50;
-      const killed = enemy.takeDamage(1);
-      if (killed) {
-        this.explosionMgr.explode(ex, ey);
-        this.scoreMgr.addKill(scoreValue);
-        this.events.emit(SHOOTER_EVENTS.SCORE_CHANGED, this.scoreMgr.score);
-      }
-    }
-  }
-
-  /** 拾取道具 */
-  private onCollectPowerup(powerupObj: Phaser.GameObjects.GameObject): void {
-    const powerup = powerupObj as any;
-    if (!powerup.active) return;
-
-    const type: string = powerup.powerUpType ?? '';
-
-    switch (type) {
-      case 'weapon_vulcan':
-      case 'weapon_spread':
-      case 'weapon_laser':
-      case 'weapon_homing': {
-        const weaponMap: Record<string, WeaponType> = {
-          weapon_vulcan: WeaponType.VULCAN,
-          weapon_spread: WeaponType.SPREAD,
-          weapon_laser: WeaponType.LASER,
-          weapon_homing: WeaponType.HOMING,
-        };
-        this.player.setWeapon(weaponMap[type]);
-        this.events.emit(SHOOTER_EVENTS.WEAPON_CHANGED, weaponMap[type], this.player.weaponLevel);
-        break;
-      }
-      case 'bomb':
-        this.player.addBomb();
-        this.events.emit(SHOOTER_EVENTS.BOMBS_CHANGED, this.player.bombs);
-        break;
-      case 'health':
-        this.player.heal(1);
-        this.events.emit(SHOOTER_EVENTS.HEALTH_CHANGED, this.player.health);
-        break;
-      case 'score_bonus':
-        this.scoreMgr.addBonus(500);
-        this.events.emit(SHOOTER_EVENTS.SCORE_CHANGED, this.scoreMgr.score);
-        break;
-    }
-
-    // 销毁道具
-    powerup.destroy();
   }
 
   // ═══════════════════════════════════════════════
@@ -601,60 +443,6 @@ export class ShooterGameScene extends Phaser.Scene {
     this.events.emit(SHOOTER_EVENTS.WEAPON_CHANGED, this.player.currentWeapon, this.player.weaponLevel);
     this.events.emit(SHOOTER_EVENTS.COMBO_CHANGED, this.scoreMgr.combo, this.scoreMgr.multiplier);
     this.events.emit(SHOOTER_EVENTS.LIVES_CHANGED, this.currentLives);
-  }
-
-  // ═══════════════════════════════════════════════
-  // 追踪弹逻辑
-  // ═══════════════════════════════════════════════
-
-  /** 更新所有 homing 子弹，使其追踪最近敌人 */
-  private updateHomingBullets(): void {
-    const TURN_RATE = 0.06; // 每帧最大转向弧度
-    const children = this.playerBullets.group.getChildren();
-
-    for (const child of children) {
-      const bullet = child as any;
-      if (!bullet.active || !bullet.isHoming) continue;
-
-      // 找最近敌人
-      let nearest: Phaser.GameObjects.GameObject | null = null;
-      let minDist = Infinity;
-
-      this.enemies.getChildren().forEach((enemy) => {
-        if (!enemy.active) return;
-        const e = enemy as Phaser.Physics.Arcade.Sprite;
-        const dist = Phaser.Math.Distance.Between(bullet.x, bullet.y, e.x, e.y);
-        if (dist < minDist) {
-          minDist = dist;
-          nearest = enemy;
-        }
-      });
-
-      if (!nearest) continue;
-
-      const target = nearest as Phaser.Physics.Arcade.Sprite;
-      const body = bullet.body as Phaser.Physics.Arcade.Body;
-      if (!body) continue;
-
-      // 当前速度方向
-      const currentAngle = Math.atan2(body.velocity.y, body.velocity.x);
-      // 目标方向
-      const targetAngle = Math.atan2(target.y - bullet.y, target.x - bullet.x);
-      // 角度差（限制转向率）
-      let angleDiff = targetAngle - currentAngle;
-      // 归一化到 [-PI, PI]
-      while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
-      while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-
-      const clampedDiff = Phaser.Math.Clamp(angleDiff, -TURN_RATE, TURN_RATE);
-      const newAngle = currentAngle + clampedDiff;
-      const speed = Math.sqrt(body.velocity.x ** 2 + body.velocity.y ** 2) || 300;
-
-      body.setVelocity(
-        Math.cos(newAngle) * speed,
-        Math.sin(newAngle) * speed
-      );
-    }
   }
 
   // ═══════════════════════════════════════════════

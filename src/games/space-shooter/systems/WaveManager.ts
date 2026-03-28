@@ -13,11 +13,9 @@ import { ShooterEnemy } from '../entities/ShooterEnemy';
 import { EnemyFactory, EnemyCreateConfig } from '../entities/enemies/EnemyFactory';
 import { BulletPool } from './BulletPool';
 import { PowerUp } from '../entities/PowerUp';
-import { Boss1Commander } from '../entities/bosses/Boss1_Commander';
-import { Boss2SkyFortress } from '../entities/bosses/Boss2_SkyFortress';
-import { Boss3Mothership } from '../entities/bosses/Boss3_Mothership';
 import { STAGE_WAVES, WaveDefinition } from '../data/StageWaves';
 import { calculateFormationPositions } from './FormationCalculator';
+import { spawnBoss, showBossWarning } from './BossSpawner';
 
 // ═══════════════════════════════════════════════
 // WaveManager
@@ -116,7 +114,7 @@ export class WaveManager {
       this.nextWaveIndex >= this.waves.length &&
       elapsed >= this.bossTriggerTime
     ) {
-      this.spawnBoss();
+      this.handleBossSpawn();
     }
 
     // 检查 Boss 是否被击败
@@ -206,100 +204,26 @@ export class WaveManager {
   // Boss 生成
   // ═══════════════════════════════════════════════
 
-  private spawnBoss(): void {
+  /** 生成 Boss 并注册回调 */
+  private handleBossSpawn(): void {
     this.bossSpawned = true;
 
-    const cx = GAME_WIDTH / 2;
-
-    switch (this.stageIndex) {
-      case 0: {
-        const boss = new Boss1Commander(
-          this.scene, cx, -80,
-          this.enemyBulletPool, this.playerRef
-        );
-        boss.onSpawnDrones = (x, y, count) =>
-          this.spawnMinions(x, y, count, ShooterEnemyType.DRONE);
-        boss.onPhaseChange = (phase) => {
-          // Phase 2 掉落 SPREAD 武器
-          if (phase === 2) {
-            this.spawnPowerUp(cx, 200, PowerUpType.WEAPON_SPREAD);
-          }
-        };
-        this.enemyGroup.add(boss);
-        this.bossRef = boss;
-        break;
-      }
-
-      case 1: {
-        const boss = new Boss2SkyFortress(
-          this.scene, cx, -100,
-          this.enemyBulletPool, this.playerRef
-        );
-        boss.onSpawnShields = (x, y, count) =>
-          this.spawnMinions(x, y, count, ShooterEnemyType.SHIELD);
-        boss.onPhaseChange = (phase) => {
-          if (phase === 2) {
-            this.spawnPowerUp(cx, 200, PowerUpType.WEAPON_LASER);
-          }
-        };
-        this.enemyGroup.add(boss);
-        this.bossRef = boss;
-        break;
-      }
-
-      case 2: {
-        const boss = new Boss3Mothership(
-          this.scene, cx, -120,
-          this.enemyBulletPool, this.playerRef
-        );
-        boss.onSpawnSpinners = (x, y, count) =>
-          this.spawnMinions(x, y, count, ShooterEnemyType.SPINNER);
-        boss.onPhaseChange = (phase) => {
-          if (phase === 2) {
-            this.spawnPowerUp(cx, 200, PowerUpType.WEAPON_HOMING);
-          }
-        };
-        // 监听多段爆炸事件（由 Boss3 的死亡动画触发）
-        this.scene.events.on('bossExplosion', (x: number, y: number) => {
-          this.scene.events.emit('explosion', x, y);
-        });
-        this.enemyGroup.add(boss);
-        this.bossRef = boss;
-        break;
-      }
-    }
-
-    // Boss 警告提示
-    this.showBossWarning();
-  }
-
-  /** Boss 来袭警告 */
-  private showBossWarning(): void {
-    const warning = this.scene.add.text(
-      GAME_WIDTH / 2,
-      GAME_HEIGHT / 2,
-      'WARNING — BOSS APPROACHING',
+    const boss = spawnBoss(
+      this.scene,
+      this.stageIndex,
+      this.enemyBulletPool,
+      this.playerRef,
       {
-        fontSize: '24px',
-        color: '#ff4444',
-        fontFamily: 'monospace',
-        fontStyle: 'bold',
-        stroke: '#000000',
-        strokeThickness: 4,
+        spawnMinions: (x, y, count, type) => this.spawnMinions(x, y, count, type),
+        spawnPowerUp: (x, y, type) => this.spawnPowerUp(x, y, type),
       }
     );
-    warning.setOrigin(0.5);
-    warning.setDepth(100);
 
-    // 闪烁后消失
-    this.scene.tweens.add({
-      targets: warning,
-      alpha: { from: 1, to: 0.2 },
-      duration: 200,
-      yoyo: true,
-      repeat: 5,
-      onComplete: () => warning.destroy(),
-    });
+    this.enemyGroup.add(boss);
+    this.bossRef = boss;
+
+    // Boss 警告提示
+    showBossWarning(this.scene);
   }
 
   // ═══════════════════════════════════════════════
