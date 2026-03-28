@@ -48,9 +48,7 @@
       0%, 100% { transform: rotate(0deg); }
       50% { transform: rotate(90deg); }
     }
-    @media (orientation: portrait) {
-      #rotate-overlay { display: flex; }
-    }
+    /* 横屏遮罩由 JS 在游戏场景内动态控制，不再使用 CSS 媒体查询 */
   </style>
 </head>
 <body>

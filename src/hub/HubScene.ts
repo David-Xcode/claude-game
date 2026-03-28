@@ -2,6 +2,7 @@
 
 import Phaser from 'phaser';
 import { SceneKey, GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { unlockOrientation } from '@shared/utils/OrientationManager';
 
 // 星星粒子数据
 interface Star {
@@ -30,6 +31,9 @@ export class HubScene extends Phaser.Scene {
   }
 
   create(): void {
+    // 返回 Hub 时解除横屏锁定，允许竖屏使用
+    unlockOrientation();
+
     // 重置状态（场景可能被重新启动）
     this.stars = [];
     this.cards = [];
@@ -131,6 +135,7 @@ export class HubScene extends Phaser.Scene {
   // ── 游戏卡片 ──────────────────────────────────
 
   private createGameCards(): void {
+    const isTouch = this.sys.game.device.input.touch;
     const cardW = 260;
     const cardH = 260;
     const gap = 40;
@@ -144,7 +149,7 @@ export class HubScene extends Phaser.Scene {
       cardW,
       cardH,
       'Pixel Adventure',
-      'Press 1',
+      isTouch ? 'Tap to play' : 'Press 1',
       SceneKey.TITLE,
       () => this.drawPixelAdventurePreview(0, 0, cardW, cardH)
     );
@@ -156,7 +161,7 @@ export class HubScene extends Phaser.Scene {
       cardW,
       cardH,
       'Space Shooter',
-      'Press 2',
+      isTouch ? 'Tap to play' : 'Press 2',
       SceneKey.SHOOTER_TITLE,
       () => this.drawSpaceShooterPreview(0, 0, cardW, cardH)
     );

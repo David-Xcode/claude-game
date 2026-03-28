@@ -52,5 +52,4 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
   navigator.serviceWorker.register('./sw.js');
 }
 
-// 尝试锁定横屏方向（lock 在 iOS Safari 不存在，需要 ?.catch 防止 undefined.catch 崩溃）
-screen.orientation?.lock?.('landscape')?.catch(() => {});
+// 横屏方向锁定已移至游戏场景内，Hub 页允许竖屏使用

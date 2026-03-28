@@ -7,6 +7,7 @@ import {
   GAME_HEIGHT,
   SHOOTER_COLORS,
 } from '@shared/utils/Constants';
+import { lockLandscape } from '@shared/utils/OrientationManager';
 
 export class ShooterTitleScene extends Phaser.Scene {
   private stars: { x: number; y: number; speed: number; size: number }[] = [];
@@ -17,6 +18,8 @@ export class ShooterTitleScene extends Phaser.Scene {
   }
 
   create(): void {
+    // 进入游戏流程后锁定横屏
+    lockLandscape();
     this.cameras.main.setBackgroundColor(0x050510);
 
     const isTouch = this.sys.game.device.input.touch;

@@ -74,10 +74,10 @@ export class ShooterGameScene extends Phaser.Scene {
   private gameOverTriggered = false;
   private respawning = false;
 
-  // 敌人组（普通 Group，避免 physics group 重置已有物理体的速度）
-  public enemies!: Phaser.GameObjects.Group;
+  // 敌人组（物理 Group，碰撞检测需要）
+  public enemies!: Phaser.Physics.Arcade.Group;
   // 道具组
-  public powerups!: Phaser.GameObjects.Group;
+  public powerups!: Phaser.Physics.Arcade.Group;
 
   constructor() {
     super({ key: SceneKey.SHOOTER_GAME });
@@ -114,9 +114,9 @@ export class ShooterGameScene extends Phaser.Scene {
     // 初始化爆炸管理器
     this.explosionMgr = new ExplosionManager(this);
 
-    // 初始化敌人组 & 道具组（普通 Group，避免 physics group 重置敌人构造时已设的速度）
-    this.enemies = this.add.group({ runChildUpdate: true });
-    this.powerups = this.add.group({ runChildUpdate: true });
+    // 初始化敌人组 & 道具组（物理 Group，确保碰撞检测可靠）
+    this.enemies = this.physics.add.group({ runChildUpdate: true, allowGravity: false });
+    this.powerups = this.physics.add.group({ runChildUpdate: true, allowGravity: false });
 
     // 初始化玩家
     this.player = new ShooterPlayer(
@@ -163,6 +163,9 @@ export class ShooterGameScene extends Phaser.Scene {
 
     // 设置碰撞组
     this.setupCollisions();
+
+    // 注册 shutdown 回调，确保场景停止时执行清理
+    this.events.on('shutdown', this.shutdown, this);
 
     // 淡入
     this.cameras.main.fadeIn(400);
@@ -294,17 +297,17 @@ export class ShooterGameScene extends Phaser.Scene {
 
     if (!enemy.active || typeof enemy.takeDamage !== 'function') return;
 
+    // 预存位置和分值（die() 内会 destroy() 移除实体）
+    const ex = (enemy as any).x ?? 0;
+    const ey = (enemy as any).y ?? 0;
+    const scoreValue = typeof enemy.getScoreValue === 'function' ? enemy.getScoreValue() : 100;
+
     const damage = bullet.damage ?? 1;
     const killed = enemy.takeDamage(damage);
 
     if (killed) {
       // 播放爆炸
-      const ex = (enemy as any).x ?? 0;
-      const ey = (enemy as any).y ?? 0;
       this.explosionMgr.explode(ex, ey);
-
-      // 加分（连击系统）
-      const scoreValue = typeof enemy.getScoreValue === 'function' ? enemy.getScoreValue() : 100;
       this.scoreMgr.addKill(scoreValue);
       this.events.emit(SHOOTER_EVENTS.SCORE_CHANGED, this.scoreMgr.score);
       this.events.emit(SHOOTER_EVENTS.COMBO_CHANGED, this.scoreMgr.combo, this.scoreMgr.multiplier);
@@ -329,10 +332,13 @@ export class ShooterGameScene extends Phaser.Scene {
     // 接触伤害同时对敌人造成 1 点伤害
     const enemy = enemyObj as any;
     if (typeof enemy.takeDamage === 'function') {
+      // 预存位置和分值（die() 内会 destroy() 移除实体）
+      const ex = enemy.x ?? 0;
+      const ey = enemy.y ?? 0;
+      const scoreValue = typeof enemy.getScoreValue === 'function' ? enemy.getScoreValue() : 50;
       const killed = enemy.takeDamage(1);
       if (killed) {
-        this.explosionMgr.explode(enemy.x ?? 0, enemy.y ?? 0);
-        const scoreValue = typeof enemy.getScoreValue === 'function' ? enemy.getScoreValue() : 50;
+        this.explosionMgr.explode(ex, ey);
         this.scoreMgr.addKill(scoreValue);
         this.events.emit(SHOOTER_EVENTS.SCORE_CHANGED, this.scoreMgr.score);
       }
@@ -544,18 +550,21 @@ export class ShooterGameScene extends Phaser.Scene {
     // 清除所有敌方子弹
     this.enemyBullets.clear();
 
-    // 对所有敌人造成大量伤害
-    this.enemies.getChildren().forEach((child) => {
+    // 对所有敌人造成大量伤害（复制数组，因为 destroy 会修改 children）
+    const aliveEnemies = this.enemies.getChildren().filter(c => c.active);
+    for (const child of aliveEnemies) {
       const enemy = child as any;
-      if (enemy.active && typeof enemy.takeDamage === 'function') {
+      if (typeof enemy.takeDamage === 'function') {
+        const ex = enemy.x ?? 0;
+        const ey = enemy.y ?? 0;
+        const scoreValue = typeof enemy.getScoreValue === 'function' ? enemy.getScoreValue() : 100;
         const killed = enemy.takeDamage(10);
         if (killed) {
-          this.explosionMgr.explode(enemy.x ?? 0, enemy.y ?? 0);
-          const scoreValue = typeof enemy.getScoreValue === 'function' ? enemy.getScoreValue() : 100;
+          this.explosionMgr.explode(ex, ey);
           this.scoreMgr.addKill(scoreValue);
         }
       }
-    });
+    }
 
     this.events.emit(SHOOTER_EVENTS.SCORE_CHANGED, this.scoreMgr.score);
 
@@ -645,6 +654,8 @@ export class ShooterGameScene extends Phaser.Scene {
     this.background?.destroy();
     this.playerBullets?.clear();
     this.enemyBullets?.clear();
-    this.events.removeAllListeners();
+    // 只移除自定义事件，不破坏 Phaser 内部生命周期事件
+    Object.values(SHOOTER_EVENTS).forEach(evt => this.events.removeAllListeners(evt));
+    this.events.off('shutdown', this.shutdown, this);
   }
 }

@@ -2,6 +2,7 @@
 
 import Phaser from 'phaser';
 import { SceneKey, GAME_WIDTH, GAME_HEIGHT, COLORS } from '@shared/utils/Constants';
+import { lockLandscape } from '@shared/utils/OrientationManager';
 
 export class TitleScene extends Phaser.Scene {
   constructor() {
@@ -9,6 +10,8 @@ export class TitleScene extends Phaser.Scene {
   }
 
   create(): void {
+    // 进入游戏流程后锁定横屏
+    lockLandscape();
     this.cameras.main.setBackgroundColor(0x1a1a2e);
 
     // 检测是否为触屏设备
