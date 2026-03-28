@@ -68,6 +68,11 @@ export class WaveManager {
     // 预创建所有敌人纹理
     EnemyFactory.preloadTextures(scene);
 
+    // 监听敌人死亡掉落事件（替代 monkey-patch die()）
+    this.scene.events.on('enemyDrop', (x: number, y: number, type: PowerUpType) => {
+      this.spawnPowerUp(x, y, type);
+    });
+
     // 加载波次数据
     this.waves = this.getWaveDefinitions(stageIndex);
     // Boss 在最后一波触发后 2 秒生成
@@ -157,26 +162,9 @@ export class WaveManager {
           );
 
           this.enemyGroup.add(enemy);
-
-          // 敌人死亡时掉落道具
-          this.setupDropOnDeath(enemy);
         });
       }
     }
-  }
-
-  /** 在敌人死亡时检查掉落 */
-  private setupDropOnDeath(enemy: ShooterEnemy): void {
-    // 覆盖 die 方法来挂载掉落逻辑
-    const originalDie = enemy.die.bind(enemy);
-    enemy.die = () => {
-      // 掉落检测
-      const dropType = enemy.rollDrop();
-      if (dropType) {
-        this.spawnPowerUp(enemy.x, enemy.y, dropType);
-      }
-      originalDie();
-    };
   }
 
   /** 生成道具 */
@@ -210,7 +198,6 @@ export class WaveManager {
           config
         );
         this.enemyGroup.add(minion);
-        this.setupDropOnDeath(minion);
       });
     }
   }
@@ -239,7 +226,6 @@ export class WaveManager {
           }
         };
         this.enemyGroup.add(boss);
-        this.setupDropOnDeath(boss);
         this.bossRef = boss;
         break;
       }
@@ -257,7 +243,6 @@ export class WaveManager {
           }
         };
         this.enemyGroup.add(boss);
-        this.setupDropOnDeath(boss);
         this.bossRef = boss;
         break;
       }
@@ -279,7 +264,6 @@ export class WaveManager {
           this.scene.events.emit('explosion', x, y);
         });
         this.enemyGroup.add(boss);
-        this.setupDropOnDeath(boss);
         this.bossRef = boss;
         break;
       }

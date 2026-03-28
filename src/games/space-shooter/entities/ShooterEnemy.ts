@@ -81,8 +81,14 @@ export abstract class ShooterEnemy extends Phaser.Physics.Arcade.Sprite {
     return false;
   }
 
-  /** 死亡：禁用并隐藏（保留在组中以免迭代时修改数组） */
+  /** 死亡：在失活前发射掉落事件，然后禁用并隐藏 */
   die(): void {
+    // 在失活前检查掉落并发射事件
+    const dropType = this.rollDrop();
+    if (dropType) {
+      this.scene.events.emit('enemyDrop', this.x, this.y, dropType);
+    }
+
     this.setActive(false);
     this.setVisible(false);
     if (this.body) {
