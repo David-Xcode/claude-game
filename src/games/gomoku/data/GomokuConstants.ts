@@ -20,7 +20,7 @@ export const GOMOKU = {
   STONE_RADIUS: 12,
   // 棋盘左上角第一个交叉点的坐标
   BOARD_X: 204,
-  BOARD_Y: 64,
+  BOARD_Y: 52,
   // AI 延迟（毫秒），让落子有自然感
   AI_DELAY_MIN: 300,
   AI_DELAY_MAX: 800,
@@ -59,7 +59,6 @@ export const GOMOKU_COLORS = {
 
   // UI 元素
   PLAYER_ACTIVE: 0x44ccff,
-  PLAYER_INACTIVE: 0x444466,
 } as const;
 
 // 五子棋深度层

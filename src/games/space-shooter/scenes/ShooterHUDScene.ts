@@ -120,7 +120,6 @@ export class ShooterHUDScene extends Phaser.Scene {
     this.gameScene.events.on(SHOOTER_EVENTS.BOMBS_CHANGED, this.updateBombs, this);
     this.gameScene.events.on(SHOOTER_EVENTS.WEAPON_CHANGED, this.updateWeapon, this);
     this.gameScene.events.on(SHOOTER_EVENTS.COMBO_CHANGED, this.updateCombo, this);
-    this.gameScene.events.on(SHOOTER_EVENTS.LIVES_CHANGED, this.updateLives, this);
     this.gameScene.events.on(SHOOTER_EVENTS.STAGE_NAME, this.showStageName, this);
   }
 
@@ -132,7 +131,6 @@ export class ShooterHUDScene extends Phaser.Scene {
     this.gameScene.events.off(SHOOTER_EVENTS.BOMBS_CHANGED, this.updateBombs, this);
     this.gameScene.events.off(SHOOTER_EVENTS.WEAPON_CHANGED, this.updateWeapon, this);
     this.gameScene.events.off(SHOOTER_EVENTS.COMBO_CHANGED, this.updateCombo, this);
-    this.gameScene.events.off(SHOOTER_EVENTS.LIVES_CHANGED, this.updateLives, this);
     this.gameScene.events.off(SHOOTER_EVENTS.STAGE_NAME, this.showStageName, this);
   }
 
@@ -266,10 +264,6 @@ export class ShooterHUDScene extends Phaser.Scene {
       duration: 60,
       yoyo: true,
     });
-  }
-
-  private updateLives(_lives: number): void {
-    // 生命数变化时可以在此添加视觉反馈（当前由血量图标体现）
   }
 
   private showStageName(name: string): void {

@@ -11,9 +11,11 @@ const config: Phaser.Types.Core.GameConfig = {
 
 const game = new Phaser.Game(config);
 
-// 视口变化时（URL 栏出现/隐藏、屏幕旋转）强制 Phaser 重新计算缩放
+// 视口变化时（URL 栏出现/隐藏、屏幕旋转）重新计算缩放，防抖避免移动端高频触发
+let resizeTimer = 0;
 window.addEventListener('resize', () => {
-  game.scale.refresh();
+  clearTimeout(resizeTimer);
+  resizeTimer = window.setTimeout(() => game.scale.refresh(), 100);
 });
 
 // 注册 Service Worker（仅生产环境）

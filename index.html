@@ -2,29 +2,30 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <!-- PWA 相关元标签 -->
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="theme-color" content="#000000">
   <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icon-192.png">
   <title>Pixel Adventure</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { height: 100%; }
-    body {
-      background: #000;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+    html, body {
+      width: 100%;
       height: 100%;
-      height: 100dvh;
       overflow: hidden;
+      background: #000;
       user-select: none;
       -webkit-touch-callout: none;
       overscroll-behavior: none;
     }
-    canvas { display: block; touch-action: none; }
+    #game-container {
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+    }
 
     /* 竖屏提示遮罩 */
     #rotate-overlay {
@@ -60,6 +61,7 @@
     </div>
   </div>
 
+  <div id="game-container"></div>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

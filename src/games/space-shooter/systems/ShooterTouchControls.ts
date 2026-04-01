@@ -217,8 +217,6 @@ export class ShooterTouchControls {
       return;
     }
 
-    const angle = Math.atan2(dy, dx);
-
     // 水平方向
     this.left = dx < -JOYSTICK_DEAD_ZONE;
     this.right = dx > JOYSTICK_DEAD_ZONE;

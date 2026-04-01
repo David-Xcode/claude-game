@@ -7,7 +7,7 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   width: GAME_WIDTH,
   height: GAME_HEIGHT,
-  parent: document.body,
+  parent: 'game-container',
   backgroundColor: '#000000',
   pixelArt: true,
   physics: {
@@ -23,7 +23,6 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
-    expandParent: false,
   },
   // 场景在 main.ts 中动态添加
   scene: [],
