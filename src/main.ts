@@ -1,43 +1,12 @@
-// 游戏入口：初始化 Phaser.Game 并注册所有场景
+// 游戏入口
 
 import Phaser from 'phaser';
 import { gameConfig } from './config';
-import { BootScene } from '@games/pixel-adventure/scenes/BootScene';
-import { HubScene } from '@hub/HubScene';
-import { TitleScene } from '@games/pixel-adventure/scenes/TitleScene';
-import { GameScene } from '@games/pixel-adventure/scenes/GameScene';
-import { HUDScene } from '@games/pixel-adventure/scenes/HUDScene';
-import { PauseScene } from '@games/pixel-adventure/scenes/PauseScene';
-import { GameOverScene } from '@games/pixel-adventure/scenes/GameOverScene';
-import { VictoryScene } from '@games/pixel-adventure/scenes/VictoryScene';
-// Space Shooter 场景
-import { ShooterTitleScene } from '@games/space-shooter/scenes/ShooterTitleScene';
-import { ShooterGameScene } from '@games/space-shooter/scenes/ShooterGameScene';
-import { ShooterHUDScene } from '@games/space-shooter/scenes/ShooterHUDScene';
-import { ShooterPauseScene } from '@games/space-shooter/scenes/ShooterPauseScene';
-import { ShooterGameOverScene } from '@games/space-shooter/scenes/ShooterGameOverScene';
-import { ShooterVictoryScene } from '@games/space-shooter/scenes/ShooterVictoryScene';
+import { ALL_SCENES } from './GameRegistry';
 
 const config: Phaser.Types.Core.GameConfig = {
   ...gameConfig,
-  scene: [
-    BootScene,
-    HubScene,
-    // Pixel Adventure
-    TitleScene,
-    GameScene,
-    HUDScene,
-    PauseScene,
-    GameOverScene,
-    VictoryScene,
-    // Space Shooter
-    ShooterTitleScene,
-    ShooterGameScene,
-    ShooterHUDScene,
-    ShooterPauseScene,
-    ShooterGameOverScene,
-    ShooterVictoryScene,
-  ],
+  scene: ALL_SCENES,
 };
 
 const game = new Phaser.Game(config);
@@ -51,5 +20,3 @@ window.addEventListener('resize', () => {
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   navigator.serviceWorker.register('./sw.js');
 }
-
-// 横屏方向锁定已移至游戏场景内，Hub 页允许竖屏使用

@@ -3,6 +3,8 @@
 import Phaser from 'phaser';
 import { SceneKey, GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
 import { unlockOrientation } from '@shared/utils/OrientationManager';
+import { isTouch } from '@shared/ui/UIHelpers';
+import { GAME_CARDS } from './GameCards';
 
 // 星星粒子数据
 interface Star {
@@ -132,41 +134,33 @@ export class HubScene extends Phaser.Scene {
       .setDepth(2);
   }
 
-  // ── 游戏卡片 ──────────────────────────────────
+  // ── 游戏卡片（数据驱动） ──────────────────────
 
   private createGameCards(): void {
-    const isTouch = this.sys.game.device.input.touch;
-    const cardW = 260;
-    const cardH = 260;
-    const gap = 40;
-    const startX = GAME_WIDTH / 2 - cardW - gap / 2;
+    const touch = isTouch(this);
+    const count = GAME_CARDS.length;
+    const gap = 30;
+    const maxCardW = 220;
+    const cardW = Math.min(maxCardW, Math.floor((GAME_WIDTH - 80 - gap * (count - 1)) / count));
+    const cardH = cardW;
+    const totalW = cardW * count + gap * (count - 1);
+    const startX = (GAME_WIDTH - totalW) / 2;
     const startY = (GAME_HEIGHT - cardH) / 2 + 15;
 
-    // 卡片1：Pixel Adventure
-    const card1 = this.createCard(
-      startX,
-      startY,
-      cardW,
-      cardH,
-      'Pixel Adventure',
-      isTouch ? 'Tap to play' : 'Press 1',
-      SceneKey.TITLE,
-      () => this.drawPixelAdventurePreview(0, 0, cardW, cardH)
-    );
-
-    // 卡片2：Space Shooter
-    const card2 = this.createCard(
-      startX + cardW + gap,
-      startY,
-      cardW,
-      cardH,
-      'Space Shooter',
-      isTouch ? 'Tap to play' : 'Press 2',
-      SceneKey.SHOOTER_TITLE,
-      () => this.drawSpaceShooterPreview(0, 0, cardW, cardH)
-    );
-
-    this.cards = [card1, card2];
+    GAME_CARDS.forEach((def, i) => {
+      const card = this.createCard(
+        startX + i * (cardW + gap), startY, cardW, cardH,
+        def.title,
+        touch ? 'Tap to play' : `Press ${i + 1}`,
+        def.sceneKey,
+        () => {
+          const g = this.add.graphics();
+          def.drawPreview(g);
+          return g;
+        }
+      );
+      this.cards.push(card);
+    });
   }
 
   private createCard(
@@ -266,153 +260,14 @@ export class HubScene extends Phaser.Scene {
     return card;
   }
 
-  // ── 绘制 Pixel Adventure 预览（迷你 Claude 角色站在绿色平台上） ──
-
-  private drawPixelAdventurePreview(
-    _x: number,
-    _y: number,
-    _w: number,
-    _h: number
-  ): Phaser.GameObjects.Graphics {
-    const g = this.add.graphics();
-
-    // 绿色平台
-    g.fillStyle(0x4a7c2f, 1);
-    g.fillRoundedRect(-60, 30, 120, 16, 4);
-
-    // 草地装饰
-    g.fillStyle(0x5a9c3f, 1);
-    g.fillRect(-55, 28, 10, 4);
-    g.fillRect(-30, 28, 8, 4);
-    g.fillRect(10, 28, 12, 4);
-    g.fillRect(40, 28, 8, 4);
-
-    // 迷你 Claude 角色 — 身体（珊瑚色圆角矩形）
-    const bodyX = -14;
-    const bodyY = -12;
-    const bodyW = 28;
-    const bodyH = 40;
-    g.fillStyle(0xc27462, 1);
-    g.fillRoundedRect(bodyX, bodyY, bodyW, bodyH, 6);
-
-    // 眼睛
-    g.fillStyle(0xffffff, 1);
-    g.fillCircle(-4, 4, 4);
-    g.fillCircle(4, 4, 4);
-    g.fillStyle(0x222222, 1);
-    g.fillCircle(-3, 4, 2);
-    g.fillCircle(5, 4, 2);
-
-    // 小脚
-    g.fillStyle(0xa85e4e, 1);
-    g.fillRoundedRect(-10, 28, 8, 4, 2);
-    g.fillRoundedRect(2, 28, 8, 4, 2);
-
-    // 背景小金币装饰
-    g.fillStyle(0xffd700, 0.8);
-    g.fillCircle(-45, -10, 6);
-    g.fillCircle(45, -20, 6);
-    g.fillCircle(35, 10, 6);
-
-    // 金币内部 $ 符号效果（简单线条）
-    g.lineStyle(1, 0xcc9900, 0.8);
-    g.lineBetween(-45, -13, -45, -7);
-    g.lineBetween(45, -23, 45, -17);
-    g.lineBetween(35, 7, 35, 13);
-
-    return g;
-  }
-
-  // ── 绘制 Space Shooter 预览（迷你 Claude 坐在蓝色飞船上） ──
-
-  private drawSpaceShooterPreview(
-    _x: number,
-    _y: number,
-    _w: number,
-    _h: number
-  ): Phaser.GameObjects.Graphics {
-    const g = this.add.graphics();
-
-    // 飞船主体（蓝色）
-    g.fillStyle(0x4466aa, 1);
-    g.beginPath();
-    g.moveTo(0, -30);
-    g.lineTo(25, 15);
-    g.lineTo(20, 25);
-    g.lineTo(-20, 25);
-    g.lineTo(-25, 15);
-    g.closePath();
-    g.fillPath();
-
-    // 飞船机翼
-    g.fillStyle(0x335599, 1);
-    // 左翼
-    g.beginPath();
-    g.moveTo(-15, 5);
-    g.lineTo(-45, 25);
-    g.lineTo(-40, 30);
-    g.lineTo(-10, 20);
-    g.closePath();
-    g.fillPath();
-    // 右翼
-    g.beginPath();
-    g.moveTo(15, 5);
-    g.lineTo(45, 25);
-    g.lineTo(40, 30);
-    g.lineTo(10, 20);
-    g.closePath();
-    g.fillPath();
-
-    // 引擎火焰
-    g.fillStyle(0xff6600, 0.8);
-    g.fillTriangle(-8, 25, 8, 25, 0, 40);
-    g.fillStyle(0xffcc00, 0.6);
-    g.fillTriangle(-4, 25, 4, 25, 0, 35);
-
-    // 迷你 Claude 在驾驶舱（珊瑚色小人）
-    g.fillStyle(0xc27462, 1);
-    g.fillRoundedRect(-8, -12, 16, 22, 4);
-
-    // 眼睛
-    g.fillStyle(0xffffff, 1);
-    g.fillCircle(-3, -4, 3);
-    g.fillCircle(3, -4, 3);
-    g.fillStyle(0x222222, 1);
-    g.fillCircle(-2, -4, 1.5);
-    g.fillCircle(4, -4, 1.5);
-
-    // 驾驶舱玻璃罩
-    g.lineStyle(2, 0x88bbee, 0.6);
-    g.strokeRoundedRect(-12, -18, 24, 30, 6);
-
-    // 背景小星星装饰
-    g.fillStyle(0xffffff, 0.5);
-    g.fillCircle(-50, -20, 1.5);
-    g.fillCircle(50, -10, 1);
-    g.fillCircle(-35, 30, 1);
-    g.fillCircle(40, 35, 1.5);
-    g.fillCircle(55, 20, 1);
-
-    // 子弹效果
-    g.fillStyle(0x00ffff, 0.7);
-    g.fillRect(-2, -45, 4, 10);
-    g.fillRect(-2, -60, 4, 8);
-
-    return g;
-  }
-
-  // ── 输入处理 ──────────────────────────────────
+  // ── 输入处理（数据驱动） ──────────────────────
 
   private setupInput(): void {
-    // 按键1 = Pixel Adventure
-    this.input.keyboard?.on('keydown-ONE', () => {
-      this.selectGame(SceneKey.TITLE);
-    });
-
-    // 按键2 = Space Shooter
-    this.input.keyboard?.on('keydown-TWO', () => {
-      this.selectGame(SceneKey.SHOOTER_TITLE);
-    });
+    for (const def of GAME_CARDS) {
+      this.input.keyboard?.on(`keydown-${def.keyboardKey}`, () => {
+        this.selectGame(def.sceneKey);
+      });
+    }
   }
 
   // ── 游戏切换（带淡出动画） ─────────────────────
