@@ -3,6 +3,7 @@
 import Phaser from 'phaser';
 import { SceneKey, GAME_WIDTH, GAME_HEIGHT, COLORS } from '@shared/utils/Constants';
 import { lockLandscape } from '@shared/utils/OrientationManager';
+import { fadeToScene } from '@shared/utils/SceneTransition';
 
 export class TitleScene extends Phaser.Scene {
   constructor() {
@@ -88,16 +89,8 @@ export class TitleScene extends Phaser.Scene {
     // 装饰：小角色预览
     this.createDecoCharacters();
 
-    // 防止重复触发的开始逻辑
-    let started = false;
-    const startGame = () => {
-      if (started) return;
-      started = true;
-      this.cameras.main.fadeOut(500);
-      this.cameras.main.once('camerafadeoutcomplete', () => {
-        this.scene.start(SceneKey.GAME, { level: 0, score: 0, lives: 3 });
-      });
-    };
+    // 开始游戏（fadeToScene 内部已防重复触发）
+    const startGame = () => fadeToScene(this, SceneKey.GAME, { level: 0, score: 0, lives: 3 });
 
     // 按键监听
     this.input.keyboard?.once('keydown-ENTER', startGame);

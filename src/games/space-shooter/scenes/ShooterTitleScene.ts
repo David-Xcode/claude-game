@@ -8,6 +8,7 @@ import {
   SHOOTER_COLORS,
 } from '@shared/utils/Constants';
 import { lockLandscape } from '@shared/utils/OrientationManager';
+import { fadeToScene } from '@shared/utils/SceneTransition';
 
 export class ShooterTitleScene extends Phaser.Scene {
   private stars: { x: number; y: number; speed: number; size: number }[] = [];
@@ -114,20 +115,8 @@ export class ShooterTitleScene extends Phaser.Scene {
     // 装饰：Claude 骑飞船小动画
     this.createShipPreview();
 
-    // 开始游戏逻辑（防重复）
-    let started = false;
-    const startGame = () => {
-      if (started) return;
-      started = true;
-      this.cameras.main.fadeOut(500);
-      this.cameras.main.once('camerafadeoutcomplete', () => {
-        this.scene.start(SceneKey.SHOOTER_GAME, {
-          stage: 0,
-          score: 0,
-          lives: 3,
-        });
-      });
-    };
+    // 开始游戏（fadeToScene 内部已防重复触发）
+    const startGame = () => fadeToScene(this, SceneKey.SHOOTER_GAME, { stage: 0, score: 0, lives: 3 });
 
     // 键盘监听
     this.input.keyboard?.on('keydown-ENTER', startGame);
@@ -221,9 +210,6 @@ export class ShooterTitleScene extends Phaser.Scene {
 
   /** 返回游戏大厅 */
   private goToHub(): void {
-    this.cameras.main.fadeOut(400);
-    this.cameras.main.once('camerafadeoutcomplete', () => {
-      this.scene.start(SceneKey.HUB);
-    });
+    fadeToScene(this, SceneKey.HUB, undefined, 400);
   }
 }
