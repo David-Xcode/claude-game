@@ -1,14 +1,8 @@
 // 五子棋标题场景：模式选择（单人/双人）+ 难度选择
 
 import Phaser from 'phaser';
-import {
-  SceneKey,
-  GAME_WIDTH,
-  GAME_HEIGHT,
-  GomokuMode,
-  GomokuDifficulty,
-  GOMOKU_COLORS,
-} from '@shared/utils/Constants';
+import { SceneKey, GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { GomokuMode, GomokuDifficulty, GOMOKU_COLORS } from '../data/GomokuConstants';
 import { lockLandscape } from '@shared/utils/OrientationManager';
 import { fadeToScene } from '@shared/utils/SceneTransition';
 import { DIFFICULTY_CONFIGS } from '../data/DifficultyConfig';

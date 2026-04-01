@@ -1,14 +1,8 @@
 // 玩家飞船：Claude 吉祥物坐在太空战机上，8 方向移动、武器射击、受伤无敌
 
 import Phaser from 'phaser';
-import {
-  GAME_WIDTH,
-  GAME_HEIGHT,
-  SHOOTER,
-  SHOOTER_COLORS,
-  SHOOTER_DEPTH,
-  WeaponType,
-} from '@shared/utils/Constants';
+import { GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { SHOOTER, SHOOTER_COLORS, SHOOTER_DEPTH, WeaponType } from '../data/ShooterConstants';
 import { BulletPool } from '../systems/BulletPool';
 import { ShooterWeaponSystem } from '../systems/ShooterWeaponSystem';
 import type { ShooterInputState } from '../systems/ShooterInputManager';

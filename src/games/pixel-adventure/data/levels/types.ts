@@ -1,6 +1,6 @@
 // 关卡数据类型定义：所有关卡共享的接口
 
-import { EnemyType, ItemType } from '@shared/utils/Constants';
+import { EnemyType, ItemType } from '../PAConstants';
 
 export interface PlatformData {
   x: number;

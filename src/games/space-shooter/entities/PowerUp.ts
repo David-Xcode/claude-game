@@ -2,12 +2,8 @@
 // 缓慢下落 + 水平摆动 + 脉冲发光效果
 
 import Phaser from 'phaser';
-import {
-  PowerUpType,
-  SHOOTER_COLORS,
-  SHOOTER_DEPTH,
-  GAME_HEIGHT,
-} from '@shared/utils/Constants';
+import { GAME_HEIGHT } from '@shared/utils/Constants';
+import { PowerUpType, SHOOTER_COLORS, SHOOTER_DEPTH } from '../data/ShooterConstants';
 
 // ═══════════════════════════════════════════════
 // 常量

@@ -2,7 +2,7 @@
 
 import Phaser from 'phaser';
 import { Enemy, EnemyState } from '../Enemy';
-import { ENEMY, COLORS } from '@shared/utils/Constants';
+import { ENEMY, COLORS } from '../../data/PAConstants';
 
 export class Slime extends Enemy {
   private patrolRange: number;

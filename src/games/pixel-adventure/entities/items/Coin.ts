@@ -1,7 +1,7 @@
 // 金币：收集后增加分数
 
 import Phaser from 'phaser';
-import { COLORS, DEPTH, ITEMS } from '@shared/utils/Constants';
+import { COLORS, DEPTH, ITEMS } from '../../data/PAConstants';
 
 export class Coin extends Phaser.Physics.Arcade.Sprite {
   public readonly scoreValue = ITEMS.COIN_SCORE;

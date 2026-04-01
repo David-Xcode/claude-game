@@ -1,5 +1,6 @@
 // Gomoku 结算场景（胜负 + 平局）
-import { SceneKey, GomokuMode, GomokuDifficulty } from '@shared/utils/Constants';
+import { SceneKey } from '@shared/utils/Constants';
+import { GomokuMode, GomokuDifficulty } from '../data/GomokuConstants';
 import { BaseGameOverScene, GameOverSceneConfig } from '@shared/scenes/BaseGameOverScene';
 
 const STATS_KEY = 'gomokuStats';

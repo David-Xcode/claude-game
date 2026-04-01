@@ -3,7 +3,7 @@
 
 import Phaser from 'phaser';
 import { InputManager } from '@shared/systems/InputManager';
-import { PLAYER, DEPTH } from '@shared/utils/Constants';
+import { PLAYER, DEPTH } from '../data/PAConstants';
 import { PlayerConfig, DEFAULT_PLAYER_CONFIG } from '@games/pixel-adventure/data/PlayerConfig';
 
 export class Player extends Phaser.Physics.Arcade.Sprite {

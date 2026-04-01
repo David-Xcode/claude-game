@@ -1,13 +1,8 @@
 // 射击游戏核心场景：整合所有系统，处理阶段推进、事件广播
 
 import Phaser from 'phaser';
-import {
-  SceneKey,
-  GAME_WIDTH,
-  GAME_HEIGHT,
-  SHOOTER,
-  SHOOTER_DEPTH,
-} from '@shared/utils/Constants';
+import { SceneKey, GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { SHOOTER, SHOOTER_DEPTH, SHOOTER_EVENTS } from '../data/ShooterConstants';
 import { ScrollingBackground } from '../systems/ScrollingBackground';
 import { ShooterPlayer } from '../entities/ShooterPlayer';
 import { ShooterInputManager } from '../systems/ShooterInputManager';
@@ -28,20 +23,6 @@ interface ShooterGameData {
   score: number;
   lives: number;
 }
-
-// ═══════════════════════════════════════════════
-// 事件名称常量
-// ═══════════════════════════════════════════════
-
-export const SHOOTER_EVENTS = {
-  HEALTH_CHANGED: 'healthChanged',
-  SCORE_CHANGED: 'scoreChanged',
-  BOMBS_CHANGED: 'bombsChanged',
-  WEAPON_CHANGED: 'weaponChanged',
-  COMBO_CHANGED: 'comboChanged',
-  LIVES_CHANGED: 'livesChanged',
-  STAGE_NAME: 'stageName',
-} as const;
 
 // ═══════════════════════════════════════════════
 // 关卡名称

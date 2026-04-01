@@ -1,7 +1,8 @@
 // 关卡2：地下洞穴（中等难度）
 // 设计目标：洞穴氛围感，尖刺陷阱高低交替，移动平台配合金币引导节奏
 
-import { EnemyType, ItemType, TILE_SIZE } from '@shared/utils/Constants';
+import { TILE_SIZE } from '@shared/utils/Constants';
+import { EnemyType, ItemType } from '../PAConstants';
 import { LevelConfig } from './types';
 
 export const LEVEL_2: LevelConfig = {

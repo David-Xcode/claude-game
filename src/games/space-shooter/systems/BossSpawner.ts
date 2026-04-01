@@ -6,7 +6,8 @@ import { BulletPool } from './BulletPool';
 import { Boss1Commander } from '../entities/bosses/Boss1_Commander';
 import { Boss2SkyFortress } from '../entities/bosses/Boss2_SkyFortress';
 import { Boss3Mothership } from '../entities/bosses/Boss3_Mothership';
-import { PowerUpType, ShooterEnemyType, GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { PowerUpType, ShooterEnemyType } from '../data/ShooterConstants';
 
 export interface BossSpawnerCallbacks {
   spawnMinions: (x: number, y: number, count: number, type: ShooterEnemyType) => void;

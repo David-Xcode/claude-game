@@ -1,7 +1,8 @@
 // 核心游戏场景：整合所有系统，处理碰撞逻辑和游戏流程
 
 import Phaser from 'phaser';
-import { SceneKey, DEPTH, GRAVITY } from '@shared/utils/Constants';
+import { SceneKey } from '@shared/utils/Constants';
+import { DEPTH, GRAVITY } from '../data/PAConstants';
 import { InputManager } from '@shared/systems/InputManager';
 import { CameraManager } from '@shared/systems/CameraManager';
 import { Player } from '@games/pixel-adventure/entities/Player';

@@ -1,7 +1,7 @@
 // 敌人工厂：根据关卡数据生成敌人实例
 
 import Phaser from 'phaser';
-import { EnemyType } from '@shared/utils/Constants';
+import { EnemyType } from '../../data/PAConstants';
 import { EnemySpawnEntry } from '@games/pixel-adventure/data/levels';
 import { Enemy } from '../Enemy';
 import { Slime, BossSlime } from './Slime';

@@ -1,7 +1,7 @@
 // 血量恢复道具
 
 import Phaser from 'phaser';
-import { COLORS, DEPTH, ITEMS } from '@shared/utils/Constants';
+import { COLORS, DEPTH, ITEMS } from '../../data/PAConstants';
 
 export class HealthPickup extends Phaser.Physics.Arcade.Sprite {
   public readonly healAmount = ITEMS.HEALTH_RESTORE;

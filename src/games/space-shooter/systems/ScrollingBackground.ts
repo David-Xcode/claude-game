@@ -2,13 +2,8 @@
 // 每层以不同速度向下滚动，产生纵深感
 
 import Phaser from 'phaser';
-import {
-  GAME_WIDTH,
-  GAME_HEIGHT,
-  SHOOTER,
-  SHOOTER_COLORS,
-  SHOOTER_DEPTH,
-} from '@shared/utils/Constants';
+import { GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { SHOOTER, SHOOTER_COLORS, SHOOTER_DEPTH } from '../data/ShooterConstants';
 
 /** 单个滚动层的配置 */
 interface ScrollLayer {

@@ -1,12 +1,8 @@
 // 射击游戏标题场景：星空背景、动画飞船预览、按键/触屏开始
 
 import Phaser from 'phaser';
-import {
-  SceneKey,
-  GAME_WIDTH,
-  GAME_HEIGHT,
-  SHOOTER_COLORS,
-} from '@shared/utils/Constants';
+import { SceneKey, GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { SHOOTER_COLORS } from '../data/ShooterConstants';
 import { lockLandscape } from '@shared/utils/OrientationManager';
 import { fadeToScene } from '@shared/utils/SceneTransition';
 

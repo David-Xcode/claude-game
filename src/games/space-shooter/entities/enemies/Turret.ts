@@ -3,7 +3,8 @@
 
 import Phaser from 'phaser';
 import { ShooterEnemy } from '../ShooterEnemy';
-import { PowerUpType, SHOOTER_COLORS, GAME_WIDTH } from '@shared/utils/Constants';
+import { GAME_WIDTH } from '@shared/utils/Constants';
+import { PowerUpType, SHOOTER_COLORS } from '../../data/ShooterConstants';
 import { BulletPool } from '../../systems/BulletPool';
 
 const TEXTURE_KEY = 'enemy_turret';

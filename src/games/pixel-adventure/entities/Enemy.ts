@@ -1,7 +1,7 @@
 // 敌人基类：状态机驱动 (IDLE → PATROL → HIT → DEAD)
 
 import Phaser from 'phaser';
-import { DEPTH } from '@shared/utils/Constants';
+import { DEPTH } from '../data/PAConstants';
 
 export enum EnemyState {
   IDLE = 'idle',

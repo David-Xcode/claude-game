@@ -2,7 +2,7 @@
 // 自动确保纹理已生成，集中管理创建逻辑
 
 import Phaser from 'phaser';
-import { ShooterEnemyType } from '@shared/utils/Constants';
+import { ShooterEnemyType } from '../../data/ShooterConstants';
 import { ShooterEnemy } from '../ShooterEnemy';
 import { BulletPool } from '../../systems/BulletPool';
 import { Drone } from './Drone';

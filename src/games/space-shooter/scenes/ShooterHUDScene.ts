@@ -2,15 +2,8 @@
 // 显示血量、分数、连击、炸弹、武器类型、暂停按钮、触控控制
 
 import Phaser from 'phaser';
-import {
-  SceneKey,
-  GAME_WIDTH,
-  GAME_HEIGHT,
-  SHOOTER,
-  SHOOTER_COLORS,
-  WeaponType,
-} from '@shared/utils/Constants';
-import { SHOOTER_EVENTS } from './ShooterGameScene';
+import { SceneKey, GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { SHOOTER, SHOOTER_COLORS, WeaponType, SHOOTER_EVENTS } from '../data/ShooterConstants';
 import { ShooterTouchControls } from '../systems/ShooterTouchControls';
 
 // 武器名称映射

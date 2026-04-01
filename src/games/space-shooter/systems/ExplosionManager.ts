@@ -2,7 +2,7 @@
 // 使用程序化生成的粒子纹理，一次性发射配置
 
 import Phaser from 'phaser';
-import { SHOOTER_DEPTH, SHOOTER_COLORS } from '@shared/utils/Constants';
+import { SHOOTER_DEPTH, SHOOTER_COLORS } from '../data/ShooterConstants';
 
 /** 粒子纹理 key */
 const TEX_PARTICLE_ORANGE = 'particle_orange';

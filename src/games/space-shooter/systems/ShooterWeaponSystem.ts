@@ -1,6 +1,6 @@
 // 武器系统：管理 4 种武器类型 × 3 级升级，控制射击节奏和弹幕模式
 
-import { WeaponType, SHOOTER_COLORS } from '@shared/utils/Constants';
+import { WeaponType, SHOOTER_COLORS } from '../data/ShooterConstants';
 import { BulletPool } from './BulletPool';
 import { WEAPON_CONFIGS, WeaponLevelConfig } from '../data/WeaponConfigs';
 import { Bullet } from '../entities/Bullet';

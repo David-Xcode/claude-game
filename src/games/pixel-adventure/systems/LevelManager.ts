@@ -7,7 +7,8 @@ import {
   SpikeData,
   LEVELS,
 } from '@games/pixel-adventure/data/levels';
-import { TILE_SIZE, DEPTH, ItemType, COLORS } from '@shared/utils/Constants';
+import { TILE_SIZE } from '@shared/utils/Constants';
+import { DEPTH, ItemType, COLORS } from '../data/PAConstants';
 import { EnemyFactory } from '@games/pixel-adventure/entities/enemies/EnemyFactory';
 import { Enemy } from '@games/pixel-adventure/entities/Enemy';
 import { Coin } from '@games/pixel-adventure/entities/items/Coin';

@@ -2,7 +2,8 @@
 // 处理 HP、受伤闪白、死亡回收、掉落计算、程序化纹理工具
 
 import Phaser from 'phaser';
-import { SHOOTER_DEPTH, PowerUpType, GAME_HEIGHT, GAME_WIDTH } from '@shared/utils/Constants';
+import { GAME_HEIGHT, GAME_WIDTH } from '@shared/utils/Constants';
+import { SHOOTER_DEPTH, PowerUpType } from '../data/ShooterConstants';
 
 // ═══════════════════════════════════════════════
 // 掉落表条目

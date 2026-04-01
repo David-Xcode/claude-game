@@ -1,7 +1,8 @@
 // 关卡3：天空要塞（高难度 + Boss）
 // 设计目标：浮空感强烈，多层次云朵，碎裂平台+金币引导，Boss竞技场有额外奖励
 
-import { EnemyType, ItemType, TILE_SIZE } from '@shared/utils/Constants';
+import { TILE_SIZE } from '@shared/utils/Constants';
+import { EnemyType, ItemType } from '../PAConstants';
 import { LevelConfig } from './types';
 
 export const LEVEL_3: LevelConfig = {

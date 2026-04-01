@@ -1,7 +1,8 @@
 // 标题场景：游戏主菜单
 
 import Phaser from 'phaser';
-import { SceneKey, GAME_WIDTH, GAME_HEIGHT, COLORS } from '@shared/utils/Constants';
+import { SceneKey, GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { COLORS } from '../data/PAConstants';
 import { lockLandscape } from '@shared/utils/OrientationManager';
 import { fadeToScene } from '@shared/utils/SceneTransition';
 

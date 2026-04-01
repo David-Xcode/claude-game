@@ -1,7 +1,7 @@
 // 关卡波次数据：纯数据文件，定义每个关卡的敌人波次配置
 // 每个关卡包含多个波次，每个波次定义触发时间、敌人类型和编队方式
 
-import { ShooterEnemyType, FormationType } from '@shared/utils/Constants';
+import { ShooterEnemyType, FormationType } from './ShooterConstants';
 
 // ═══════════════════════════════════════════════
 // 波次定义接口

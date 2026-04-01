@@ -1,7 +1,8 @@
 // HUD 场景：与 GameScene 并行运行，显示血量、分数、生命数
 
 import Phaser from 'phaser';
-import { SceneKey, GAME_WIDTH, PLAYER } from '@shared/utils/Constants';
+import { SceneKey, GAME_WIDTH } from '@shared/utils/Constants';
+import { PLAYER } from '../data/PAConstants';
 import { TouchControls } from '@shared/systems/TouchControls';
 
 export class HUDScene extends Phaser.Scene {

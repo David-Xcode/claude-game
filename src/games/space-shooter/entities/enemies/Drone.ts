@@ -3,7 +3,7 @@
 
 import Phaser from 'phaser';
 import { ShooterEnemy } from '../ShooterEnemy';
-import { PowerUpType, SHOOTER_COLORS } from '@shared/utils/Constants';
+import { PowerUpType, SHOOTER_COLORS } from '../../data/ShooterConstants';
 
 const TEXTURE_KEY = 'enemy_drone';
 const SIZE = 32;

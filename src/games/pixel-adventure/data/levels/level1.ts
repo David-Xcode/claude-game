@@ -1,7 +1,8 @@
 // 关卡1：绿色平原（教学关）
 // 设计目标：引导新手学习基础操作，节奏舒缓，有安全小坑练习跳跃
 
-import { EnemyType, ItemType, TILE_SIZE } from '@shared/utils/Constants';
+import { TILE_SIZE } from '@shared/utils/Constants';
+import { EnemyType, ItemType } from '../PAConstants';
 import { LevelConfig } from './types';
 
 export const LEVEL_1: LevelConfig = {

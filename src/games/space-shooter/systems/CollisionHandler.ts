@@ -1,12 +1,11 @@
 // 碰撞管理器：注册碰撞检测 + 处理 4 种碰撞回调
 
 import Phaser from 'phaser';
-import { WeaponType } from '@shared/utils/Constants';
+import { WeaponType, SHOOTER_EVENTS } from '../data/ShooterConstants';
 import { BulletPool } from './BulletPool';
 import { ExplosionManager } from './ExplosionManager';
 import { ScoreManager } from './ScoreManager';
 import { ShooterPlayer } from '../entities/ShooterPlayer';
-import { SHOOTER_EVENTS } from '../scenes/ShooterGameScene';
 
 export interface CollisionConfig {
   scene: Phaser.Scene;

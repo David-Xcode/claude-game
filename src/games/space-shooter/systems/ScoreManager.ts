@@ -1,7 +1,7 @@
 // 分数 + 连击系统：击杀叠加连击倍率，超时重置
 
 import Phaser from 'phaser';
-import { SHOOTER } from '@shared/utils/Constants';
+import { SHOOTER } from '../data/ShooterConstants';
 
 const STORAGE_KEY = 'spaceShooterHighScore';
 

@@ -3,7 +3,7 @@
 
 import Phaser from 'phaser';
 import { ShooterEnemy } from '../ShooterEnemy';
-import { PowerUpType, SHOOTER_COLORS } from '@shared/utils/Constants';
+import { PowerUpType, SHOOTER_COLORS } from '../../data/ShooterConstants';
 
 const TEXTURE_KEY = 'enemy_spinner';
 const SIZE = 32;

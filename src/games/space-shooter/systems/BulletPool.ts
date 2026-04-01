@@ -1,7 +1,8 @@
 // 子弹对象池：基于 Phaser Arcade Group，管理子弹的发射、回收、碰撞
 
 import Phaser from 'phaser';
-import { GAME_WIDTH, GAME_HEIGHT, SHOOTER_COLORS } from '@shared/utils/Constants';
+import { GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { SHOOTER_COLORS } from '../data/ShooterConstants';
 import { Bullet } from '../entities/Bullet';
 
 export class BulletPool {

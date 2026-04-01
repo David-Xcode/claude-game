@@ -2,7 +2,8 @@
 // 纯函数，无副作用
 
 import Phaser from 'phaser';
-import { FormationType, GAME_WIDTH } from '@shared/utils/Constants';
+import { GAME_WIDTH } from '@shared/utils/Constants';
+import { FormationType } from '../data/ShooterConstants';
 
 // ═══════════════════════════════════════════════
 // 编队位置计算

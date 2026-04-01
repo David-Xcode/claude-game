@@ -1,6 +1,6 @@
 // 角色属性配置（便于 V2 多角色切换）
 
-import { PLAYER } from '@shared/utils/Constants';
+import { PLAYER } from './PAConstants';
 
 export interface PlayerConfig {
   name: string;

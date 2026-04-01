@@ -1,6 +1,6 @@
 // 武器配置数据：定义 4 种武器 × 3 级的弹幕模式、射速、伤害
 
-import { WeaponType } from '@shared/utils/Constants';
+import { WeaponType } from '../data/ShooterConstants';
 
 // ═══════════════════════════════════════════════
 // 类型定义

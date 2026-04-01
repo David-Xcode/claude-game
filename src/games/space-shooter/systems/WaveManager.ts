@@ -3,12 +3,8 @@
 // 所有波次完成后生成 Boss，Boss 被击败标记关卡完成
 
 import Phaser from 'phaser';
-import {
-  ShooterEnemyType,
-  GAME_WIDTH,
-  GAME_HEIGHT,
-  PowerUpType,
-} from '@shared/utils/Constants';
+import { GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { ShooterEnemyType, PowerUpType } from '../data/ShooterConstants';
 import { ShooterEnemy } from '../entities/ShooterEnemy';
 import { EnemyFactory, EnemyCreateConfig } from '../entities/enemies/EnemyFactory';
 import { BulletPool } from './BulletPool';
