@@ -18,6 +18,8 @@ export class GomokuAI {
   private depth: number;
   private topN: number;
   private aiPlayer: 1 | 2;
+  // 增量候选缓存，避免每次 getBestMove 都全盘扫描
+  private candidateCache = new Set<string>();
 
   constructor(difficulty: GomokuDifficulty, aiPlayer: 1 | 2 = 2) {
     const config = DIFFICULTY_CONFIGS[difficulty];
@@ -26,9 +28,43 @@ export class GomokuAI {
     this.aiPlayer = aiPlayer;
   }
 
+  /** 棋盘上有新落子时调用，增量更新候选位置 */
+  notifyMove(grid: Grid, row: number, col: number): void {
+    const size = GOMOKU.GRID_SIZE;
+    // 移除已落子的位置
+    this.candidateCache.delete(`${row},${col}`);
+    // 添加新落子周围 2 格的空位
+    for (let dr = -2; dr <= 2; dr++) {
+      for (let dc = -2; dc <= 2; dc++) {
+        const nr = row + dr;
+        const nc = col + dc;
+        if (nr < 0 || nr >= size || nc < 0 || nc >= size) continue;
+        if (grid[nr][nc] !== 0) continue;
+        this.candidateCache.add(`${nr},${nc}`);
+      }
+    }
+  }
+
+  /** 重置候选缓存 */
+  resetCache(): void {
+    this.candidateCache.clear();
+  }
+
   /** 获取 AI 最佳落子位置 */
   getBestMove(grid: Grid): Position {
-    const candidates = this.getCandidates(grid);
+    // 用缓存候选（如果有的话），否则回退到全扫描
+    let candidates: Position[];
+    if (this.candidateCache.size > 0) {
+      candidates = [];
+      for (const key of this.candidateCache) {
+        const [r, c] = key.split(',').map(Number);
+        if (grid[r][c] === 0) {
+          candidates.push({ row: r, col: c });
+        }
+      }
+    } else {
+      candidates = this.getCandidates(grid);
+    }
 
     // 空棋盘 → 下天元
     if (candidates.length === 0) {

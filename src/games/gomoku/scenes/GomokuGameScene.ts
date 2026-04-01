@@ -137,6 +137,9 @@ export class GomokuGameScene extends Phaser.Scene {
     const player = this.board.currentPlayer;
     if (!this.board.placeStone(row, col)) return;
 
+    // 增量更新 AI 候选缓存
+    this.ai?.notifyMove(this.board.grid, row, col);
+
     this.moveCount++;
     this.boardRenderer.drawStone(row, col, player);
     this.boardRenderer.drawLastMoveMarker(row, col);
