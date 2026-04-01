@@ -13,6 +13,7 @@ export class VictoryScene extends BaseGameOverScene {
       title: 'YOU WIN!',
       titleColor: '#ffdd44',
       subtitle: 'Congratulations!\nAll levels cleared!',
+      subtitleColor: '#aaffaa',
       stats: [`Final Score: ${data.score ?? 0}`],
       showCelebration: true,
       floatTitle: true,

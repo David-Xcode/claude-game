@@ -23,7 +23,15 @@ export class ShooterVictoryScene extends BaseGameOverScene {
       title: 'MISSION COMPLETE',
       titleColor: '#ffdd44',
       subtitle: 'All stages cleared!\nThe galaxy is safe.',
-      stats: [`Final Score: ${score}`, highLabel],
+      stats: [
+        `Final Score: ${score}`,
+        {
+          text: highLabel,
+          color: isNewHigh ? '#ffdd44' : '#888888',
+          bold: isNewHigh,
+          blink: isNewHigh,
+        },
+      ],
       showCelebration: true,
       floatTitle: true,
       replaySceneKey: SceneKey.SHOOTER_GAME,

@@ -15,6 +15,7 @@ export class GameOverScene extends BaseGameOverScene {
       stats: [`Final Score: ${data.score ?? 0}`],
       showCelebration: false,
       floatTitle: false,
+      replayLabel: 'Retry',
       replaySceneKey: SceneKey.GAME,
       replayData: { level: 0, score: 0, lives: 3 },
       quitSceneKey: SceneKey.TITLE,

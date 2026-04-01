@@ -22,9 +22,18 @@ export class ShooterGameOverScene extends BaseGameOverScene {
       backgroundColor: 0x0a0508,
       title: 'GAME OVER',
       titleColor: '#ff4444',
-      stats: [`Final Score: ${score}`, highLabel],
+      stats: [
+        `Final Score: ${score}`,
+        {
+          text: highLabel,
+          color: isNewHigh ? '#ffdd44' : '#888888',
+          bold: isNewHigh,
+          blink: isNewHigh,
+        },
+      ],
       showCelebration: false,
       floatTitle: false,
+      replayLabel: 'Retry',
       replaySceneKey: SceneKey.SHOOTER_GAME,
       replayData: { stage: 0, score: 0, lives: 3 },
     };

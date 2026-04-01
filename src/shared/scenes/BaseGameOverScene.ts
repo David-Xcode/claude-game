@@ -5,16 +5,25 @@ import { fadeToScene } from '@shared/utils/SceneTransition';
 import { isTouch, createMenuButton, addBlinkAnimation, addFloatAnimation } from '@shared/ui/UIHelpers';
 import { createCelebrationParticles } from '@shared/ui/CelebrationEffect';
 
+export interface StatLine {
+  text: string;
+  color?: string;       // 默认 '#ffffff'
+  bold?: boolean;        // 默认 false
+  blink?: boolean;       // 默认 false（如 "NEW HIGH SCORE!" 闪烁）
+}
+
 export interface GameOverSceneConfig {
   backgroundColor: number;
   title: string;
   titleColor: string;
   subtitle?: string;
-  stats?: string[];
+  subtitleColor?: string;   // 默认 '#aaccff'
+  stats?: (string | StatLine)[];  // 字符串或富文本行
   showCelebration: boolean;
   floatTitle: boolean;
   replaySceneKey: string;
   replayData: object;
+  replayLabel?: string;     // 默认 'Play Again'
   quitSceneKey?: string;
   quitLabel?: string;
 }
@@ -41,16 +50,28 @@ export abstract class BaseGameOverScene extends Phaser.Scene {
     let nextY = GAME_HEIGHT / 2 - 40;
     if (config.subtitle) {
       this.add.text(GAME_WIDTH / 2, nextY, config.subtitle, {
-        fontSize: '18px', color: '#aaccff', fontFamily: 'monospace', align: 'center',
+        fontSize: '18px', color: config.subtitleColor ?? '#aaccff',
+        fontFamily: 'monospace', align: 'center',
       }).setOrigin(0.5);
       nextY += 35;
     }
 
     if (config.stats) {
-      for (const line of config.stats) {
-        this.add.text(GAME_WIDTH / 2, nextY, line, {
-          fontSize: '16px', color: '#ffffff', fontFamily: 'monospace',
+      for (const entry of config.stats) {
+        const isRich = typeof entry !== 'string';
+        const text = isRich ? entry.text : entry;
+        const color = isRich && entry.color ? entry.color : '#ffffff';
+        const bold = isRich && entry.bold;
+
+        const statText = this.add.text(GAME_WIDTH / 2, nextY, text, {
+          fontSize: '16px', color, fontFamily: 'monospace',
+          fontStyle: bold ? 'bold' : 'normal',
         }).setOrigin(0.5);
+
+        if (isRich && entry.blink) {
+          addBlinkAnimation(this, statText, 0.4, 500);
+        }
+
         nextY += 28;
       }
     }
@@ -59,7 +80,8 @@ export abstract class BaseGameOverScene extends Phaser.Scene {
 
     const btnY = Math.max(nextY + 30, GAME_HEIGHT / 2 + 50);
 
-    const replayLabel = touch ? 'Play Again' : '[ ENTER ] Play Again';
+    const btnLabel = config.replayLabel ?? 'Play Again';
+    const replayLabel = touch ? btnLabel : `[ ENTER ] ${btnLabel}`;
     const replayBtn = createMenuButton(
       this, GAME_WIDTH / 2, btnY, replayLabel, '#aaffaa', '20px',
       () => fadeToScene(this, config.replaySceneKey, config.replayData)
