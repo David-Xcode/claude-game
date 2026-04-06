@@ -1,17 +1,9 @@
 // 射击游戏移动端触控系统：虚拟摇杆 + 自动开火 + 炸弹按钮
 // 下半屏拖拽控制方向，自动射击无需火力按钮
-// 支持多点触控
+// 支持多点触控；摇杆参数和按钮位置随 uiScale 缩放
 
 import Phaser from 'phaser';
-import { GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
-
-/** 摇杆死区半径（低于此值不产生方向输入） */
-const JOYSTICK_DEAD_ZONE = 12;
-/** 摇杆最大半径（超过此值方向值仍为 1） */
-const JOYSTICK_MAX_RADIUS = 60;
-/** 摇杆指示器大小 */
-const JOYSTICK_BASE_RADIUS = 40;
-const JOYSTICK_KNOB_RADIUS = 18;
+import { layout } from '@shared/utils/Constants';
 
 export class ShooterTouchControls {
   private scene: Phaser.Scene;
@@ -51,10 +43,12 @@ export class ShooterTouchControls {
     // 创建摇杆底座（初始隐藏，触摸时显示）
     this.joystickBase = scene.add.graphics();
     this.joystickBase.setDepth(1000);
+    this.joystickBase.setScrollFactor(0);
     this.joystickBase.setAlpha(0);
 
     this.joystickKnob = scene.add.graphics();
     this.joystickKnob.setDepth(1001);
+    this.joystickKnob.setScrollFactor(0);
     this.joystickKnob.setAlpha(0);
 
     this.drawJoystickVisuals();
@@ -74,6 +68,9 @@ export class ShooterTouchControls {
     scene.input.on('pointermove', this.onPointerMove);
     scene.input.on('pointerup', this.onPointerUp);
     scene.input.on('pointercancel', this.onPointerUp);
+
+    // 窗口 resize 时重建炸弹按钮（摇杆在触摸时动态创建，无需重建）
+    this.scene.scale.on('resize', this.repositionControls, this);
   }
 
   get bombPressed(): boolean {
@@ -90,7 +87,23 @@ export class ShooterTouchControls {
     this._pauseJustPressed = false;
   }
 
+  /** 销毁并重建炸弹按钮 + 摇杆视觉，适配新尺寸 */
+  private repositionControls(): void {
+    // 销毁旧的炸弹按钮
+    this.bombButton?.destroy();
+    this.bombZone?.destroy();
+    this.bombButton = null;
+    this.bombZone = null;
+
+    // 重建炸弹按钮
+    this.createBombButton();
+
+    // 重绘摇杆视觉（尺寸可能变化）
+    this.drawJoystickVisuals();
+  }
+
   destroy(): void {
+    this.scene.scale.off('resize', this.repositionControls, this);
     this.scene.input.off('pointerdown', this.onPointerDown);
     this.scene.input.off('pointermove', this.onPointerMove);
     this.scene.input.off('pointerup', this.onPointerUp);
@@ -114,17 +127,19 @@ export class ShooterTouchControls {
   private drawJoystickVisuals(): void {
     if (!this.joystickBase || !this.joystickKnob) return;
 
-    // 底座：半透明圆环
-    this.joystickBase.clear();
-    this.joystickBase.lineStyle(2, 0xffffff, 0.4);
-    this.joystickBase.strokeCircle(0, 0, JOYSTICK_BASE_RADIUS);
-    this.joystickBase.fillStyle(0xffffff, 0.08);
-    this.joystickBase.fillCircle(0, 0, JOYSTICK_BASE_RADIUS);
+    const s = layout.uiScale;
 
-    // 摇杆头：实心小圆
+    // 底座：半透明圆环（按 uiScale 缩放半径）
+    this.joystickBase.clear();
+    this.joystickBase.lineStyle(2 * s, 0xffffff, 0.4);
+    this.joystickBase.strokeCircle(0, 0, 40 * s);
+    this.joystickBase.fillStyle(0xffffff, 0.08);
+    this.joystickBase.fillCircle(0, 0, 40 * s);
+
+    // 摇杆头：实心小圆（按 uiScale 缩放半径）
     this.joystickKnob.clear();
     this.joystickKnob.fillStyle(0xffffff, 0.5);
-    this.joystickKnob.fillCircle(0, 0, JOYSTICK_KNOB_RADIUS);
+    this.joystickKnob.fillCircle(0, 0, 18 * s);
   }
 
   // ═══════════════════════════════════════════════
@@ -132,28 +147,33 @@ export class ShooterTouchControls {
   // ═══════════════════════════════════════════════
 
   private createBombButton(): void {
-    const bx = GAME_WIDTH - 80;
-    const by = 22;
+    const bx = layout.width - layout.safeRight - layout.scale(80);
+    const by = layout.safeTop + layout.scale(22);
+
+    const s = layout.uiScale;
 
     this.bombButton = this.scene.add.graphics();
     this.bombButton.setPosition(bx, by);
     this.bombButton.setDepth(1000);
+    this.bombButton.setScrollFactor(0);
     this.bombButton.setAlpha(0.4);
 
-    // 炸弹图标：圆 + 引信
+    // 炸弹图标：圆 + 引信（按 uiScale 缩放）
     this.bombButton.fillStyle(0xffcc00);
-    this.bombButton.fillCircle(0, 2, 10);
-    this.bombButton.lineStyle(2, 0xff6600);
-    this.bombButton.lineBetween(0, -8, 3, -14);
+    this.bombButton.fillCircle(0, 2 * s, 10 * s);
+    this.bombButton.lineStyle(2 * s, 0xff6600);
+    this.bombButton.lineBetween(0, -8 * s, 3 * s, -14 * s);
 
-    // "B" 文字标记
+    // "B" 文字标记（按 uiScale 缩放）
     this.bombButton.fillStyle(0x000000);
-    this.bombButton.fillRect(-3, -2, 6, 8);
+    this.bombButton.fillRect(-3 * s, -2 * s, 6 * s, 8 * s);
 
-    // 触控热区
-    this.bombZone = this.scene.add.zone(bx, by, 50, 50);
+    // 触控热区（最小 44px，符合 Apple HIG）
+    const hitSize = layout.scale(50, 44);
+    this.bombZone = this.scene.add.zone(bx, by, hitSize, hitSize);
     this.bombZone.setInteractive();
     this.bombZone.setDepth(1001);
+    this.bombZone.setScrollFactor(0);
 
     this.bombZone.on('pointerdown', () => {
       this._bombJustPressed = true;
@@ -173,7 +193,7 @@ export class ShooterTouchControls {
 
   private handlePointerDown(pointer: Phaser.Input.Pointer): void {
     // 只在屏幕下半部分启用摇杆（避免与 HUD 冲突）
-    if (pointer.y < GAME_HEIGHT * 0.4) return;
+    if (pointer.y < layout.height * 0.4) return;
 
     // 如果还没有摇杆绑定，绑定这根手指
     if (this.joystickPointerId === -1) {
@@ -194,13 +214,17 @@ export class ShooterTouchControls {
   private handlePointerMove(pointer: Phaser.Input.Pointer): void {
     if (pointer.id !== this.joystickPointerId) return;
 
+    const s = layout.uiScale;
+    const deadZone = 12 * s;
+    const maxRadius = 60 * s;
+
     const dx = pointer.x - this.joystickOriginX;
     const dy = pointer.y - this.joystickOriginY;
     const dist = Math.sqrt(dx * dx + dy * dy);
 
     // 更新摇杆头位置（限制在最大半径内）
     if (this.joystickKnob) {
-      const clampedDist = Math.min(dist, JOYSTICK_MAX_RADIUS);
+      const clampedDist = Math.min(dist, maxRadius);
       const angle = Math.atan2(dy, dx);
       this.joystickKnob.setPosition(
         this.joystickOriginX + Math.cos(angle) * clampedDist,
@@ -209,7 +233,7 @@ export class ShooterTouchControls {
     }
 
     // 判断方向
-    if (dist < JOYSTICK_DEAD_ZONE) {
+    if (dist < deadZone) {
       this.left = false;
       this.right = false;
       this.up = false;
@@ -218,12 +242,12 @@ export class ShooterTouchControls {
     }
 
     // 水平方向
-    this.left = dx < -JOYSTICK_DEAD_ZONE;
-    this.right = dx > JOYSTICK_DEAD_ZONE;
+    this.left = dx < -deadZone;
+    this.right = dx > deadZone;
 
     // 垂直方向
-    this.up = dy < -JOYSTICK_DEAD_ZONE;
-    this.down = dy > JOYSTICK_DEAD_ZONE;
+    this.up = dy < -deadZone;
+    this.down = dy > deadZone;
   }
 
   private handlePointerUp(pointer: Phaser.Input.Pointer): void {

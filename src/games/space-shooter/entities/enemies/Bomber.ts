@@ -3,7 +3,7 @@
 
 import Phaser from 'phaser';
 import { ShooterEnemy } from '../ShooterEnemy';
-import { GAME_WIDTH } from '@shared/utils/Constants';
+import { layout } from '@shared/utils/Constants';
 import { PowerUpType, SHOOTER_COLORS } from '../../data/ShooterConstants';
 import { BulletPool } from '../../systems/BulletPool';
 
@@ -73,9 +73,9 @@ export class Bomber extends ShooterEnemy {
 
   isOffScreen(): boolean {
     // 飞出对面那一侧才回收
-    if (this.direction > 0 && this.x > GAME_WIDTH + 50) return true;
+    if (this.direction > 0 && this.x > layout.width + 50) return true;
     if (this.direction < 0 && this.x < -50) return true;
-    return this.y > 530 || this.y < -50;
+    return this.y > layout.height + 50 || this.y < -50;
   }
 
   // ═══════════════════════════════════════════════

@@ -1,7 +1,7 @@
 // 射击游戏标题场景：星空背景、动画飞船预览、按键/触屏开始
 
 import Phaser from 'phaser';
-import { SceneKey, GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { SceneKey, layout } from '@shared/utils/Constants';
 import { SHOOTER_COLORS } from '../data/ShooterConstants';
 import { lockLandscape } from '@shared/utils/OrientationManager';
 import { fadeToScene } from '@shared/utils/SceneTransition';
@@ -19,14 +19,27 @@ export class ShooterTitleScene extends Phaser.Scene {
     lockLandscape();
     this.cameras.main.setBackgroundColor(0x050510);
 
+    this.buildUI();
+
+    // 监听窗口尺寸变化，重建 UI
+    this.scale.on('resize', this.onResize, this);
+    this.events.once('shutdown', () => {
+      this.scale.off('resize', this.onResize, this);
+    });
+
+    this.cameras.main.fadeIn(500);
+  }
+
+  /** 构建/重建全部 UI 元素 */
+  private buildUI(): void {
     const isTouch = this.sys.game.device.input.touch;
 
     // 初始化星空
     this.initStarField();
 
     // 标题文字（带发光效果）
-    const titleGlow = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 3 - 18, 'SPACE SHOOTER', {
-      fontSize: '48px',
+    const titleGlow = this.add.text(layout.centerX, layout.height / 3 - layout.scale(18), 'SPACE SHOOTER', {
+      fontSize: layout.fontSize(48),
       color: '#4488ff',
       fontFamily: 'monospace',
       fontStyle: 'bold',
@@ -35,8 +48,8 @@ export class ShooterTitleScene extends Phaser.Scene {
     titleGlow.setAlpha(0.3);
     titleGlow.setBlendMode(Phaser.BlendModes.ADD);
 
-    const title = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 3 - 20, 'SPACE SHOOTER', {
-      fontSize: '48px',
+    const title = this.add.text(layout.centerX, layout.height / 3 - layout.scale(20), 'SPACE SHOOTER', {
+      fontSize: layout.fontSize(48),
       color: '#ffffff',
       fontFamily: 'monospace',
       fontStyle: 'bold',
@@ -71,8 +84,8 @@ export class ShooterTitleScene extends Phaser.Scene {
     const startLabel = isTouch
       ? '[ TAP TO START ]'
       : '[ PRESS ENTER TO START ]';
-    const startText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 60, startLabel, {
-      fontSize: '18px',
+    const startText = this.add.text(layout.centerX, layout.centerY + layout.scale(60), startLabel, {
+      fontSize: layout.fontSize(18),
       color: '#ffffff',
       fontFamily: 'monospace',
     });
@@ -90,8 +103,8 @@ export class ShooterTitleScene extends Phaser.Scene {
     const controlsLabel = isTouch
       ? 'D-Pad: Move  |  Auto-fire enabled'
       : 'Arrow / WASD: Move  |  Space: Fire  |  B: Bomb  |  ESC: Pause';
-    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 40, controlsLabel, {
-      fontSize: '12px',
+    this.add.text(layout.centerX, layout.height - layout.safeBottom - layout.scale(40), controlsLabel, {
+      fontSize: layout.fontSize(12),
       color: '#666688',
       fontFamily: 'monospace',
       align: 'center',
@@ -99,11 +112,16 @@ export class ShooterTitleScene extends Phaser.Scene {
 
     // 返回大厅提示
     const backLabel = isTouch ? '[ Back ]' : '[ ESC ] Back to Hub';
-    const backText = this.add.text(20, 20, backLabel, {
-      fontSize: '14px',
-      color: '#888888',
-      fontFamily: 'monospace',
-    });
+    const backText = this.add.text(
+      layout.safeLeft + layout.scale(20),
+      layout.safeTop + layout.scale(20),
+      backLabel,
+      {
+        fontSize: layout.fontSize(14),
+        color: '#888888',
+        fontFamily: 'monospace',
+      },
+    );
     backText.setPadding(10, 8, 10, 8);
     backText.setInteractive();
     backText.on('pointerdown', () => this.goToHub());
@@ -125,8 +143,6 @@ export class ShooterTitleScene extends Phaser.Scene {
       if (pointer.x < 150 && pointer.y < 50) return;
       startGame();
     });
-
-    this.cameras.main.fadeIn(500);
   }
 
   update(): void {
@@ -134,9 +150,9 @@ export class ShooterTitleScene extends Phaser.Scene {
     this.starGraphics.clear();
     for (const star of this.stars) {
       star.y += star.speed;
-      if (star.y > GAME_HEIGHT + 2) {
+      if (star.y > layout.height + 2) {
         star.y = -2;
-        star.x = Phaser.Math.Between(0, GAME_WIDTH);
+        star.x = Phaser.Math.Between(0, layout.width);
       }
       const alpha = Phaser.Math.Clamp(star.speed / 2, 0.2, 0.8);
       this.starGraphics.fillStyle(0xffffff, alpha);
@@ -149,8 +165,8 @@ export class ShooterTitleScene extends Phaser.Scene {
     this.stars = [];
     for (let i = 0; i < 80; i++) {
       this.stars.push({
-        x: Phaser.Math.Between(0, GAME_WIDTH),
-        y: Phaser.Math.Between(0, GAME_HEIGHT),
+        x: Phaser.Math.Between(0, layout.width),
+        y: Phaser.Math.Between(0, layout.height),
         speed: Phaser.Math.FloatBetween(0.3, 1.5),
         size: Phaser.Math.Between(1, 2),
       });
@@ -160,25 +176,26 @@ export class ShooterTitleScene extends Phaser.Scene {
 
   /** 创建 Claude 骑飞船小动画预览 */
   private createShipPreview(): void {
-    const cx = GAME_WIDTH / 2;
-    const cy = GAME_HEIGHT / 2 + 5;
+    const cx = layout.centerX;
+    const cy = layout.centerY + layout.scale(5);
+    const s = layout.uiScale;
     const g = this.add.graphics();
     g.setPosition(cx, cy);
 
     // 飞船主体
     g.fillStyle(SHOOTER_COLORS.SHIP_HULL);
-    g.fillTriangle(0, -16, -14, 12, 14, 12);
+    g.fillTriangle(0, -16 * s, -14 * s, 12 * s, 14 * s, 12 * s);
 
     // 机翼
     g.fillStyle(SHOOTER_COLORS.SHIP_WING);
-    g.fillTriangle(-14, 12, -22, 18, -6, 6);
-    g.fillTriangle(14, 12, 22, 18, 6, 6);
+    g.fillTriangle(-14 * s, 12 * s, -22 * s, 18 * s, -6 * s, 6 * s);
+    g.fillTriangle(14 * s, 12 * s, 22 * s, 18 * s, 6 * s, 6 * s);
 
     // 引擎光焰
     const flame = this.add.graphics();
     flame.setPosition(cx, cy);
     flame.fillStyle(SHOOTER_COLORS.SHIP_ENGINE, 0.8);
-    flame.fillTriangle(-5, 13, 5, 13, 0, 24);
+    flame.fillTriangle(-5 * s, 13 * s, 5 * s, 13 * s, 0, 24 * s);
 
     this.tweens.add({
       targets: flame,
@@ -191,7 +208,7 @@ export class ShooterTitleScene extends Phaser.Scene {
 
     // Claude（飞船座舱上的小人）
     g.fillStyle(SHOOTER_COLORS.PLAYER_BODY);
-    g.fillCircle(0, -2, 5);
+    g.fillCircle(0, -2 * s, 5 * s);
 
     // 整体浮动
     this.tweens.add({
@@ -202,6 +219,16 @@ export class ShooterTitleScene extends Phaser.Scene {
       repeat: -1,
       ease: 'Sine.easeInOut',
     });
+  }
+
+  /** 窗口尺寸变化时销毁并重建全部 UI */
+  private onResize(): void {
+    // 停止所有补间动画并移除所有子对象
+    this.tweens.killAll();
+    this.children.removeAll(true);
+    this.input.removeAllListeners();
+    this.input.keyboard?.removeAllListeners();
+    this.buildUI();
   }
 
   /** 返回游戏大厅 */

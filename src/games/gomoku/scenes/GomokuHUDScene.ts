@@ -1,7 +1,8 @@
 // 五子棋 HUD 场景：玩家指示器、回合数、暂停按钮
+// 支持 resize 时销毁并重建全部 UI
 
 import Phaser from 'phaser';
-import { SceneKey, GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { SceneKey, layout } from '@shared/utils/Constants';
 import { GomokuMode, GomokuDifficulty, GOMOKU_COLORS, GOMOKU_DEPTH } from '../data/GomokuConstants';
 import { DIFFICULTY_CONFIGS } from '../data/DifficultyConfig';
 
@@ -17,6 +18,12 @@ export class GomokuHUDScene extends Phaser.Scene {
   private player2Dot!: Phaser.GameObjects.Graphics;
   private moveText!: Phaser.GameObjects.Text;
   private mode!: GomokuMode;
+  private difficulty!: GomokuDifficulty;
+
+  // 运行时状态（resize 后还原）
+  private currentPlayer: 1 | 2 = 1;
+  private currentMoveCount = 0;
+
   // 保存事件回调引用，以便 shutdown 时取消订阅
   private onTurnChanged!: (player: 1 | 2) => void;
   private onMoveCountChanged!: (count: number) => void;
@@ -27,19 +34,48 @@ export class GomokuHUDScene extends Phaser.Scene {
 
   create(data: HUDData): void {
     this.mode = data.mode;
-    const config = DIFFICULTY_CONFIGS[data.difficulty];
+    this.difficulty = data.difficulty;
+
+    this.buildUI();
+
+    // ── 监听 GameScene 事件 ──
+    this.onTurnChanged = (player: 1 | 2) => {
+      this.currentPlayer = player;
+      this.updateActivePlayer(player);
+    };
+    this.onMoveCountChanged = (count: number) => {
+      this.currentMoveCount = count;
+      this.moveText.setText(`Move: ${count}`);
+    };
+
+    const gameScene = this.scene.get(SceneKey.GOMOKU_GAME);
+    gameScene.events.on('turnChanged', this.onTurnChanged);
+    gameScene.events.on('moveCountChanged', this.onMoveCountChanged);
+
+    // resize 监听
+    this.scale.on('resize', this.handleResize, this);
+
+    // 注册 shutdown 回调清理事件监听
+    this.events.on('shutdown', this.shutdown, this);
+  }
+
+  // ── UI 构建（create + resize 时调用） ─────────
+
+  private buildUI(): void {
+    const config = DIFFICULTY_CONFIGS[this.difficulty];
+    const margin = layout.scale(70, 40);
 
     // ── 左侧：Player 1（黑棋）指示器 ──
-    const p1X = 70;
-    const p1Y = GAME_HEIGHT / 2 - 40;
+    const p1X = margin;
+    const p1Y = layout.height / 2 - layout.scale(40);
 
     this.player1Dot = this.add.graphics().setDepth(GOMOKU_DEPTH.UI);
-    this.drawPlayerDot(this.player1Dot, p1X, p1Y, 1, true);
+    this.drawPlayerDot(this.player1Dot, p1X, p1Y, 1, this.currentPlayer === 1);
 
     this.player1Label = this.add
-      .text(p1X, p1Y + 22, this.mode === GomokuMode.SINGLE_PLAYER ? 'You' : 'Player 1', {
-        fontSize: '13px',
-        color: '#ffffff',
+      .text(p1X, p1Y + layout.scale(22), this.mode === GomokuMode.SINGLE_PLAYER ? 'You' : 'Player 1', {
+        fontSize: layout.fontSize(13),
+        color: this.currentPlayer === 1 ? '#ffffff' : '#666666',
         fontFamily: 'monospace',
         align: 'center',
       })
@@ -47,8 +83,8 @@ export class GomokuHUDScene extends Phaser.Scene {
       .setDepth(GOMOKU_DEPTH.UI);
 
     this.add
-      .text(p1X, p1Y + 38, 'BLACK', {
-        fontSize: '10px',
+      .text(p1X, p1Y + layout.scale(38), 'BLACK', {
+        fontSize: layout.fontSize(10),
         color: '#888888',
         fontFamily: 'monospace',
       })
@@ -56,20 +92,20 @@ export class GomokuHUDScene extends Phaser.Scene {
       .setDepth(GOMOKU_DEPTH.UI);
 
     // ── 右侧：Player 2（白棋）指示器 ──
-    const p2X = GAME_WIDTH - 70;
-    const p2Y = GAME_HEIGHT / 2 - 40;
+    const p2X = layout.width - margin;
+    const p2Y = layout.height / 2 - layout.scale(40);
 
     this.player2Dot = this.add.graphics().setDepth(GOMOKU_DEPTH.UI);
-    this.drawPlayerDot(this.player2Dot, p2X, p2Y, 2, false);
+    this.drawPlayerDot(this.player2Dot, p2X, p2Y, 2, this.currentPlayer === 2);
 
     const p2Name =
       this.mode === GomokuMode.SINGLE_PLAYER
         ? `AI (${config.name})`
         : 'Player 2';
     this.player2Label = this.add
-      .text(p2X, p2Y + 22, p2Name, {
-        fontSize: '13px',
-        color: '#aaaaaa',
+      .text(p2X, p2Y + layout.scale(22), p2Name, {
+        fontSize: layout.fontSize(13),
+        color: this.currentPlayer === 2 ? '#ffffff' : '#aaaaaa',
         fontFamily: 'monospace',
         align: 'center',
       })
@@ -77,8 +113,8 @@ export class GomokuHUDScene extends Phaser.Scene {
       .setDepth(GOMOKU_DEPTH.UI);
 
     this.add
-      .text(p2X, p2Y + 38, 'WHITE', {
-        fontSize: '10px',
+      .text(p2X, p2Y + layout.scale(38), 'WHITE', {
+        fontSize: layout.fontSize(10),
         color: '#888888',
         fontFamily: 'monospace',
       })
@@ -87,8 +123,8 @@ export class GomokuHUDScene extends Phaser.Scene {
 
     // ── 顶部中央：回合数 ──
     this.moveText = this.add
-      .text(GAME_WIDTH / 2, 16, 'Move: 0', {
-        fontSize: '14px',
+      .text(layout.width / 2, layout.scale(16), `Move: ${this.currentMoveCount}`, {
+        fontSize: layout.fontSize(14),
         color: '#888888',
         fontFamily: 'monospace',
       })
@@ -99,8 +135,8 @@ export class GomokuHUDScene extends Phaser.Scene {
     const isTouch = this.sys.game.device.input.touch;
     if (isTouch) {
       const pauseBtn = this.add
-        .text(GAME_WIDTH - 30, 16, '❚❚', {
-          fontSize: '18px',
+        .text(layout.width - layout.scale(30), layout.scale(16), '❚❚', {
+          fontSize: layout.fontSize(18),
           color: '#888888',
           fontFamily: 'monospace',
         })
@@ -115,24 +151,18 @@ export class GomokuHUDScene extends Phaser.Scene {
         this.scene.launch(SceneKey.GOMOKU_PAUSE);
       });
     }
+  }
 
-    // ── 监听 GameScene 事件 ──
-    this.onTurnChanged = (player: 1 | 2) => {
-      this.updateActivePlayer(player);
-    };
-    this.onMoveCountChanged = (count: number) => {
-      this.moveText.setText(`Move: ${count}`);
-    };
+  // ── resize 处理 ───────────────────────────────
 
-    const gameScene = this.scene.get(SceneKey.GOMOKU_GAME);
-    gameScene.events.on('turnChanged', this.onTurnChanged);
-    gameScene.events.on('moveCountChanged', this.onMoveCountChanged);
-
-    // 注册 shutdown 回调清理事件监听
-    this.events.on('shutdown', this.shutdown, this);
+  private handleResize(): void {
+    // 销毁所有 UI 对象并重建
+    this.children.removeAll(true);
+    this.buildUI();
   }
 
   private shutdown(): void {
+    this.scale.off('resize', this.handleResize, this);
     const gameScene = this.scene.get(SceneKey.GOMOKU_GAME);
     if (gameScene) {
       gameScene.events.off('turnChanged', this.onTurnChanged);
@@ -143,10 +173,11 @@ export class GomokuHUDScene extends Phaser.Scene {
 
   /** 更新当前活跃玩家的视觉指示 */
   private updateActivePlayer(activePlayer: 1 | 2): void {
-    const p1X = 70;
-    const p1Y = GAME_HEIGHT / 2 - 40;
-    const p2X = GAME_WIDTH - 70;
-    const p2Y = GAME_HEIGHT / 2 - 40;
+    const margin = layout.scale(70, 40);
+    const p1X = margin;
+    const p1Y = layout.height / 2 - layout.scale(40);
+    const p2X = layout.width - margin;
+    const p2Y = layout.height / 2 - layout.scale(40);
 
     this.player1Dot.clear();
     this.drawPlayerDot(this.player1Dot, p1X, p1Y, 1, activePlayer === 1);
@@ -165,7 +196,8 @@ export class GomokuHUDScene extends Phaser.Scene {
     player: 1 | 2,
     active: boolean
   ): void {
-    const r = 14;
+    const r = layout.scale(14, 8);
+    const hlOffset = Math.max(1, Math.round(r * 0.2));
 
     // 活跃指示光环
     if (active) {
@@ -178,12 +210,12 @@ export class GomokuHUDScene extends Phaser.Scene {
       g.fillStyle(GOMOKU_COLORS.STONE_BLACK, active ? 1 : 0.5);
       g.fillCircle(x, y, r);
       g.fillStyle(GOMOKU_COLORS.STONE_BLACK_HIGHLIGHT, 0.3);
-      g.fillCircle(x - 3, y - 3, r * 0.4);
+      g.fillCircle(x - hlOffset, y - hlOffset, r * 0.4);
     } else {
       g.fillStyle(GOMOKU_COLORS.STONE_WHITE, active ? 1 : 0.5);
       g.fillCircle(x, y, r);
       g.fillStyle(GOMOKU_COLORS.STONE_WHITE_HIGHLIGHT, 0.4);
-      g.fillCircle(x - 3, y - 3, r * 0.35);
+      g.fillCircle(x - hlOffset, y - hlOffset, r * 0.35);
     }
   }
 }

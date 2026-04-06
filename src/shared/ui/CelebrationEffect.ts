@@ -1,6 +1,6 @@
 // 共享撒花粒子特效
 import Phaser from 'phaser';
-import { GAME_WIDTH } from '@shared/utils/Constants';
+import { layout } from '@shared/utils/Constants';
 
 const DEFAULT_COLORS = [0xffdd44, 0xff4444, 0x44ff44, 0x4488ff, 0xff44ff, 0x44ffff];
 
@@ -17,8 +17,8 @@ export function createCelebrationParticles(
       g.generateTexture(key, 5, 5);
       g.destroy();
     }
-    scene.add.particles(GAME_WIDTH / 2, -10, key, {
-      x: { min: -GAME_WIDTH / 2, max: GAME_WIDTH / 2 },
+    scene.add.particles(layout.width / 2, -10, key, {
+      x: { min: -layout.width / 2, max: layout.width / 2 },
       speed: { min: 40, max: 130 },
       angle: { min: 75, max: 105 },
       lifespan: 5000,

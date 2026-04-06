@@ -84,6 +84,9 @@ export class GomokuGameScene extends Phaser.Scene {
       }
     });
 
+    // 注册 resize 监听器，棋盘动态适配
+    this.boardRenderer.registerResizeHandler();
+
     // 注册 shutdown 回调，确保事件监听器被清理
     this.events.on('shutdown', this.shutdown, this);
   }
@@ -214,6 +217,7 @@ export class GomokuGameScene extends Phaser.Scene {
   }
 
   private shutdown(): void {
+    this.boardRenderer.removeResizeHandler();
     this.input.removeAllListeners();
     this.input.keyboard?.removeAllListeners();
     // HUD 依赖本场景存在，本场景关闭时同步关闭

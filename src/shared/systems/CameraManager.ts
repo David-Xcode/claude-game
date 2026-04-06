@@ -1,10 +1,11 @@
 // 相机管理器：带死区的跟随相机
 
 import Phaser from 'phaser';
-import { GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { layout } from '@shared/utils/Constants';
 
 export class CameraManager {
   private camera: Phaser.Cameras.Scene2D.Camera;
+  private resizeHandler: () => void;
 
   constructor(scene: Phaser.Scene, worldWidth: number, worldHeight: number) {
     this.camera = scene.cameras.main;
@@ -13,7 +14,18 @@ export class CameraManager {
     this.camera.setBounds(0, 0, worldWidth, worldHeight);
 
     // 设置死区，让角色在中心区域移动时相机不跟随，减少晃动
-    this.camera.setDeadzone(GAME_WIDTH * 0.3, GAME_HEIGHT * 0.4);
+    this.camera.setDeadzone(layout.width * 0.3, layout.height * 0.4);
+
+    // 窗口尺寸变化时更新死区
+    this.resizeHandler = () => {
+      this.camera.setDeadzone(layout.width * 0.3, layout.height * 0.4);
+    };
+    scene.scale.on('resize', this.resizeHandler);
+
+    // 场景关闭时移除监听
+    scene.events.once('shutdown', () => {
+      scene.scale.off('resize', this.resizeHandler);
+    });
   }
 
   startFollow(target: Phaser.GameObjects.GameObject): void {

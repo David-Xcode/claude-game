@@ -1,7 +1,7 @@
 // 子弹对象池：基于 Phaser Arcade Group，管理子弹的发射、回收、碰撞
 
 import Phaser from 'phaser';
-import { GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { layout } from '@shared/utils/Constants';
 import { SHOOTER_COLORS } from '../data/ShooterConstants';
 import { Bullet } from '../entities/Bullet';
 
@@ -109,7 +109,7 @@ export class BulletPool {
       const y = bullet.y;
 
       // 子弹飞出屏幕缓冲区则回收
-      if (y < -20 || y > GAME_HEIGHT + 20 || x < -20 || x > GAME_WIDTH + 20) {
+      if (y < -20 || y > layout.height + 20 || x < -20 || x > layout.width + 20) {
         bullet.recycle();
       }
     });

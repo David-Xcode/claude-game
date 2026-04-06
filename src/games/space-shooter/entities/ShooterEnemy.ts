@@ -2,7 +2,7 @@
 // 处理 HP、受伤闪白、死亡回收、掉落计算、程序化纹理工具
 
 import Phaser from 'phaser';
-import { GAME_HEIGHT, GAME_WIDTH } from '@shared/utils/Constants';
+import { layout } from '@shared/utils/Constants';
 import { SHOOTER_DEPTH, PowerUpType } from '../data/ShooterConstants';
 
 // ═══════════════════════════════════════════════
@@ -130,9 +130,9 @@ export abstract class ShooterEnemy extends Phaser.Physics.Arcade.Sprite {
   /** 检测是否飞出屏幕缓冲区 */
   isOffScreen(): boolean {
     return (
-      this.y > GAME_HEIGHT + 50 ||
+      this.y > layout.height + 50 ||
       this.y < -50 ||
-      this.x > GAME_WIDTH + 50 ||
+      this.x > layout.width + 50 ||
       this.x < -50
     );
   }

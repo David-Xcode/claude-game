@@ -6,7 +6,7 @@ import { BulletPool } from './BulletPool';
 import { Boss1Commander } from '../entities/bosses/Boss1_Commander';
 import { Boss2SkyFortress } from '../entities/bosses/Boss2_SkyFortress';
 import { Boss3Mothership } from '../entities/bosses/Boss3_Mothership';
-import { GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { layout } from '@shared/utils/Constants';
 import { PowerUpType, ShooterEnemyType } from '../data/ShooterConstants';
 
 export interface BossSpawnerCallbacks {
@@ -22,7 +22,7 @@ export function spawnBoss(
   playerRef: Phaser.GameObjects.Sprite,
   callbacks: BossSpawnerCallbacks
 ): ShooterEnemy {
-  const cx = GAME_WIDTH / 2;
+  const cx = layout.width / 2;
 
   switch (stageIndex) {
     case 0: {
@@ -96,11 +96,11 @@ export function spawnBoss(
 /** Boss 来袭警告 */
 export function showBossWarning(scene: Phaser.Scene): void {
   const warning = scene.add.text(
-    GAME_WIDTH / 2,
-    GAME_HEIGHT / 2,
+    layout.width / 2,
+    layout.height / 2,
     'WARNING — BOSS APPROACHING',
     {
-      fontSize: '24px',
+      fontSize: layout.fontSize(24),
       color: '#ff4444',
       fontFamily: 'monospace',
       fontStyle: 'bold',

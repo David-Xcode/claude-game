@@ -6,7 +6,7 @@
 
 import Phaser from 'phaser';
 import { ShooterEnemy } from '../ShooterEnemy';
-import { GAME_WIDTH } from '@shared/utils/Constants';
+import { layout } from '@shared/utils/Constants';
 import { PowerUpType, SHOOTER_COLORS } from '../../data/ShooterConstants';
 import { BulletPool } from '../../systems/BulletPool';
 import { BossBase } from './BossBase';
@@ -110,7 +110,7 @@ export class Boss3Mothership extends BossBase {
   private phase2Behavior(time: number, delta: number): void {
     // 缓慢左右
     const t = this.moveTime * 0.0006;
-    this.x = GAME_WIDTH / 2 + Math.sin(t) * (GAME_WIDTH / 2 - W / 2 - 20);
+    this.x = layout.width / 2 + Math.sin(t) * (layout.width / 2 - W / 2 - 20);
 
     // 追踪弹（瞄准快速射击）
     if (time - this.lastAimedTime >= 800) {
@@ -137,7 +137,7 @@ export class Boss3Mothership extends BossBase {
   private phase3Behavior(time: number, delta: number): void {
     // 快速移动
     const t = this.moveTime * 0.0012;
-    this.x = GAME_WIDTH / 2 + Math.sin(t) * (GAME_WIDTH / 2 - W / 2 - 15);
+    this.x = layout.width / 2 + Math.sin(t) * (layout.width / 2 - W / 2 - 15);
     this.y = this.targetY + Math.sin(t * 1.7) * 25;
 
     // 瞄准连射 500ms

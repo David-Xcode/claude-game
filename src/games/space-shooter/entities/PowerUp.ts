@@ -2,7 +2,7 @@
 // 缓慢下落 + 水平摆动 + 脉冲发光效果
 
 import Phaser from 'phaser';
-import { GAME_HEIGHT } from '@shared/utils/Constants';
+import { layout } from '@shared/utils/Constants';
 import { PowerUpType, SHOOTER_COLORS, SHOOTER_DEPTH } from '../data/ShooterConstants';
 
 // ═══════════════════════════════════════════════
@@ -13,7 +13,8 @@ const POWERUP_SIZE = 16;
 const DRIFT_SPEED = 60;          // 下落速度
 const WOBBLE_AMPLITUDE = 20;     // 水平摆动幅度
 const WOBBLE_SPEED = 0.003;      // 水平摆动速度
-const DESPAWN_Y = GAME_HEIGHT + 30; // 超出底部回收
+// 注意：不能在模块级用 layout.height 初始化常量，因为 layout 是动态值
+// DESPAWN_Y 改为在 preUpdate 里直接使用 layout.height + 30
 
 /** 每种道具的颜色映射 */
 const TYPE_COLORS: Record<PowerUpType, number> = {
@@ -205,8 +206,8 @@ export class PowerUp extends Phaser.Physics.Arcade.Sprite {
     const wobble = Math.sin(time * WOBBLE_SPEED + this.wobbleOffset) * WOBBLE_AMPLITUDE;
     this.x = this.spawnX + wobble;
 
-    // 超出屏幕底部回收
-    if (this.y > DESPAWN_Y) {
+    // 超出屏幕底部回收（layout.height 是动态值，不能缓存为模块级常量）
+    if (this.y > layout.height + 30) {
       this.destroy();
     }
   }

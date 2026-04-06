@@ -6,7 +6,7 @@
 
 import Phaser from 'phaser';
 import { ShooterEnemy } from '../ShooterEnemy';
-import { GAME_WIDTH } from '@shared/utils/Constants';
+import { layout } from '@shared/utils/Constants';
 import { PowerUpType, SHOOTER_COLORS } from '../../data/ShooterConstants';
 import { BulletPool } from '../../systems/BulletPool';
 import { BossBase } from './BossBase';
@@ -61,8 +61,8 @@ export class Boss1Commander extends BossBase {
     this.x += this.moveDir * speed * (delta / 1000);
 
     // 反弹
-    if (this.x > GAME_WIDTH - W / 2 - 10) {
-      this.x = GAME_WIDTH - W / 2 - 10;
+    if (this.x > layout.width - W / 2 - 10) {
+      this.x = layout.width - W / 2 - 10;
       this.moveDir = -1;
     } else if (this.x < W / 2 + 10) {
       this.x = W / 2 + 10;

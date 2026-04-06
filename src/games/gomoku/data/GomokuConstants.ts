@@ -1,5 +1,7 @@
 // 五子棋专用常量
 
+import { layout, BoardLayout } from '@shared/utils/ResponsiveLayout';
+
 // 五子棋游戏模式
 export enum GomokuMode {
   SINGLE_PLAYER = 'singlePlayer',
@@ -13,20 +15,20 @@ export enum GomokuDifficulty {
   HARD = 'hard',
 }
 
-// 五子棋棋盘常量
+// 五子棋棋盘常量（仅保留非空间类常量）
 export const GOMOKU = {
   GRID_SIZE: 15,
-  CELL_SIZE: 28,
-  STONE_RADIUS: 12,
-  // 棋盘左上角第一个交叉点的坐标
-  BOARD_X: 204,
-  BOARD_Y: 52,
   // AI 延迟（毫秒），让落子有自然感
   AI_DELAY_MIN: 300,
   AI_DELAY_MAX: 800,
   // 胜利后等待时间
   WIN_DELAY: 1500,
 } as const;
+
+/** 根据当前屏幕尺寸计算五子棋棋盘布局 */
+export function getGomokuBoardLayout(): BoardLayout {
+  return layout.boardLayout(15, 15, 50, 0.42);
+}
 
 // 五子棋颜色
 export const GOMOKU_COLORS = {

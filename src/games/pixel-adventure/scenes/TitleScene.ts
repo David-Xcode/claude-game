@@ -1,7 +1,7 @@
 // 标题场景：游戏主菜单
 
 import Phaser from 'phaser';
-import { SceneKey, GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { SceneKey, layout } from '@shared/utils/Constants';
 import { COLORS } from '../data/PAConstants';
 import { lockLandscape } from '@shared/utils/OrientationManager';
 import { fadeToScene } from '@shared/utils/SceneTransition';
@@ -14,6 +14,28 @@ export class TitleScene extends Phaser.Scene {
   create(): void {
     // 进入游戏流程后锁定横屏
     lockLandscape();
+
+    this.buildUI();
+
+    // 窗口尺寸变化时销毁所有子对象并重建 UI
+    this.scale.on('resize', this.onResize, this);
+    this.events.once('shutdown', () => {
+      this.scale.off('resize', this.onResize, this);
+    });
+  }
+
+  /** 尺寸变化时销毁全部子对象并重建 */
+  private onResize(): void {
+    // 停止所有补间动画，移除输入监听，再销毁子对象
+    this.tweens.killAll();
+    this.input.removeAllListeners();
+    this.input.keyboard?.removeAllListeners();
+    this.children.removeAll(true);
+    this.buildUI();
+  }
+
+  /** 构建所有 UI 元素 */
+  private buildUI(): void {
     this.cameras.main.setBackgroundColor(0x1a1a2e);
 
     // 检测是否为触屏设备
@@ -21,24 +43,24 @@ export class TitleScene extends Phaser.Scene {
 
     // 标题
     const title = this.add.text(
-      GAME_WIDTH / 2,
-      GAME_HEIGHT / 3 - 20,
+      layout.centerX,
+      layout.height / 3 - layout.scale(20),
       'PIXEL ADVENTURE',
       {
-        fontSize: '48px',
+        fontSize: layout.fontSize(48),
         color: '#ffdd44',
         fontFamily: 'monospace',
         fontStyle: 'bold',
         stroke: '#000000',
-        strokeThickness: 6,
-      }
+        strokeThickness: layout.scale(6, 2),
+      },
     );
     title.setOrigin(0.5);
 
     // 标题浮动动画
     this.tweens.add({
       targets: title,
-      y: title.y - 8,
+      y: title.y - layout.scale(8),
       duration: 1500,
       yoyo: true,
       repeat: -1,
@@ -50,14 +72,14 @@ export class TitleScene extends Phaser.Scene {
       ? '[ TAP TO START ]'
       : '[ PRESS ENTER / TAP TO START ]';
     const startText = this.add.text(
-      GAME_WIDTH / 2,
-      GAME_HEIGHT / 2 + 40,
+      layout.centerX,
+      layout.centerY + layout.scale(40),
       startLabel,
       {
-        fontSize: '20px',
+        fontSize: layout.fontSize(20),
         color: '#ffffff',
         fontFamily: 'monospace',
-      }
+      },
     );
     startText.setOrigin(0.5);
 
@@ -75,15 +97,15 @@ export class TitleScene extends Phaser.Scene {
       ? 'D-Pad: Move  |  Button: Jump\nPause button: top right'
       : 'Arrow Keys / WASD - Move    |    Up / W / Space - Jump\nESC - Pause    |    F1 - Debug';
     const controls = this.add.text(
-      GAME_WIDTH / 2,
-      GAME_HEIGHT / 2 + 100,
+      layout.centerX,
+      layout.centerY + layout.scale(100),
       controlsLabel,
       {
-        fontSize: '14px',
+        fontSize: layout.fontSize(14),
         color: '#888888',
         fontFamily: 'monospace',
         align: 'center',
-      }
+      },
     );
     controls.setOrigin(0.5);
 
@@ -104,18 +126,21 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private createDecoCharacters(): void {
+    const s = layout.uiScale;
+
     // 装饰用小史莱姆
-    const g1 = this.add.graphics();
-    g1.fillStyle(COLORS.SLIME);
-    g1.fillEllipse(0, 0, 28, 18);
-    g1.fillStyle(0xffffff);
-    g1.fillCircle(-5, -2, 3);
-    g1.fillCircle(5, -2, 3);
-    g1.setPosition(200, GAME_HEIGHT - 60);
+    const slime = this.add.graphics();
+    slime.fillStyle(COLORS.SLIME);
+    slime.fillEllipse(0, 0, 28 * s, 18 * s);
+    slime.fillStyle(0xffffff);
+    slime.fillCircle(-5 * s, -2 * s, 3 * s);
+    slime.fillCircle(5 * s, -2 * s, 3 * s);
+    const slimeX = layout.width * 0.25;
+    slime.setPosition(slimeX, layout.height - layout.scale(60));
 
     this.tweens.add({
-      targets: g1,
-      x: 300,
+      targets: slime,
+      x: slimeX + layout.scale(100),
       duration: 3000,
       yoyo: true,
       repeat: -1,
@@ -123,16 +148,17 @@ export class TitleScene extends Phaser.Scene {
     });
 
     // 装饰用小飞行眼
-    const g2 = this.add.graphics();
-    g2.fillStyle(COLORS.FLYING_EYE);
-    g2.fillCircle(0, 0, 12);
-    g2.fillStyle(0xffffff);
-    g2.fillCircle(0, 0, 6);
-    g2.setPosition(550, GAME_HEIGHT - 100);
+    const eye = this.add.graphics();
+    eye.fillStyle(COLORS.FLYING_EYE);
+    eye.fillCircle(0, 0, 12 * s);
+    eye.fillStyle(0xffffff);
+    eye.fillCircle(0, 0, 6 * s);
+    const eyeY = layout.height - layout.scale(100);
+    eye.setPosition(layout.width * 0.69, eyeY);
 
     this.tweens.add({
-      targets: g2,
-      y: GAME_HEIGHT - 130,
+      targets: eye,
+      y: eyeY - layout.scale(30),
       duration: 1500,
       yoyo: true,
       repeat: -1,

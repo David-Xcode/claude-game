@@ -1,7 +1,7 @@
 // 游戏大厅场景：太空主题背景 + 游戏选择卡片
 
 import Phaser from 'phaser';
-import { SceneKey, GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { SceneKey, layout } from '@shared/utils/Constants';
 import { unlockOrientation } from '@shared/utils/OrientationManager';
 import { isTouch } from '@shared/ui/UIHelpers';
 import { GAME_CARDS } from './GameCards';
@@ -59,21 +59,29 @@ export class HubScene extends Phaser.Scene {
 
     // 底部提示文字
     this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - 30, 'Select a game to play', {
-        fontSize: '14px',
+      .text(layout.width / 2, layout.height - layout.scale(30), 'Select a game to play', {
+        fontSize: layout.fontSize(14),
         color: '#667788',
         fontFamily: 'monospace',
       })
       .setOrigin(0.5);
+
+    // 监听窗口尺寸变化，重建布局
+    this.scale.on('resize', this.onResize, this);
+
+    // 场景关闭时移除 resize 监听，避免再次 create 时重复注册
+    this.events.once('shutdown', () => {
+      this.scale.off('resize', this.onResize, this);
+    });
   }
 
   update(_time: number, delta: number): void {
     // 星星缓慢漂移
     for (const star of this.stars) {
       star.y += star.speed * (delta / 1000);
-      if (star.y > GAME_HEIGHT + 2) {
+      if (star.y > layout.height + 2) {
         star.y = -2;
-        star.x = Phaser.Math.Between(0, GAME_WIDTH);
+        star.x = Phaser.Math.Between(0, layout.width);
       }
       star.graphic.setPosition(star.x, star.y);
     }
@@ -84,8 +92,8 @@ export class HubScene extends Phaser.Scene {
   private createStarfield(): void {
     const starCount = 80;
     for (let i = 0; i < starCount; i++) {
-      const x = Phaser.Math.Between(0, GAME_WIDTH);
-      const y = Phaser.Math.Between(0, GAME_HEIGHT);
+      const x = Phaser.Math.Between(0, layout.width);
+      const y = Phaser.Math.Between(0, layout.height);
       const size = Phaser.Math.FloatBetween(0.5, 2);
       const alpha = Phaser.Math.FloatBetween(0.3, 0.9);
       const speed = Phaser.Math.FloatBetween(5, 20);
@@ -102,8 +110,8 @@ export class HubScene extends Phaser.Scene {
   private createTitle(): void {
     // 标题发光效果（底层模糊文字）
     this.add
-      .text(GAME_WIDTH / 2, 50, 'GAME ARCADE', {
-        fontSize: '42px',
+      .text(layout.width / 2, 50, 'GAME ARCADE', {
+        fontSize: layout.fontSize(42),
         color: '#4488ff',
         fontFamily: 'monospace',
         fontStyle: 'bold',
@@ -114,8 +122,8 @@ export class HubScene extends Phaser.Scene {
 
     // 标题主体
     this.add
-      .text(GAME_WIDTH / 2, 50, 'GAME ARCADE', {
-        fontSize: '40px',
+      .text(layout.width / 2, 50, 'GAME ARCADE', {
+        fontSize: layout.fontSize(40),
         color: '#ffffff',
         fontFamily: 'monospace',
         fontStyle: 'bold',
@@ -125,8 +133,8 @@ export class HubScene extends Phaser.Scene {
 
     // 副标题
     this.add
-      .text(GAME_WIDTH / 2, 85, '- Choose Your Game -', {
-        fontSize: '14px',
+      .text(layout.width / 2, 85, '- Choose Your Game -', {
+        fontSize: layout.fontSize(14),
         color: '#4488aa',
         fontFamily: 'monospace',
       })
@@ -139,13 +147,13 @@ export class HubScene extends Phaser.Scene {
   private createGameCards(): void {
     const touch = isTouch(this);
     const count = GAME_CARDS.length;
-    const gap = 30;
-    const maxCardW = 220;
-    const cardW = Math.min(maxCardW, Math.floor((GAME_WIDTH - 80 - gap * (count - 1)) / count));
+    const gap = layout.scale(30);
+    const maxCardW = layout.scale(220);
+    const cardW = Math.min(maxCardW, Math.floor((layout.width - layout.scale(80) - gap * (count - 1)) / count));
     const cardH = cardW;
     const totalW = cardW * count + gap * (count - 1);
-    const startX = (GAME_WIDTH - totalW) / 2;
-    const startY = (GAME_HEIGHT - cardH) / 2 + 15;
+    const startX = (layout.width - totalW) / 2;
+    const startY = (layout.height - cardH) / 2 + 15;
 
     GAME_CARDS.forEach((def, i) => {
       const card = this.createCard(
@@ -198,7 +206,7 @@ export class HubScene extends Phaser.Scene {
     // 游戏标题
     const titleText = this.add
       .text(0, h / 2 - 65, title, {
-        fontSize: '18px',
+        fontSize: layout.fontSize(18),
         color: '#ffffff',
         fontFamily: 'monospace',
         fontStyle: 'bold',
@@ -209,7 +217,7 @@ export class HubScene extends Phaser.Scene {
     // 按键提示
     const hintText = this.add
       .text(0, h / 2 - 40, hint, {
-        fontSize: '14px',
+        fontSize: layout.fontSize(14),
         color: '#44ccff',
         fontFamily: 'monospace',
       })
@@ -263,11 +271,40 @@ export class HubScene extends Phaser.Scene {
   // ── 输入处理（数据驱动） ──────────────────────
 
   private setupInput(): void {
+    // 先移除旧监听，防止 resize 重建时重复注册
+    this.input.keyboard?.removeAllListeners();
+
     for (const def of GAME_CARDS) {
       this.input.keyboard?.on(`keydown-${def.keyboardKey}`, () => {
         this.selectGame(def.sceneKey);
       });
     }
+  }
+
+  // ── 窗口尺寸变化时重建全部 UI ─────────────────
+
+  private onResize(): void {
+    // 防止过渡动画期间重建
+    if (this.transitioning) return;
+
+    // 销毁所有游戏对象，重新创建
+    this.children.removeAll(true);
+    this.stars = [];
+    this.cards = [];
+
+    this.createStarfield();
+    this.createTitle();
+    this.createGameCards();
+    this.setupInput();
+
+    // 重新创建底部提示
+    this.add
+      .text(layout.width / 2, layout.height - layout.scale(30), 'Select a game to play', {
+        fontSize: layout.fontSize(14),
+        color: '#667788',
+        fontFamily: 'monospace',
+      })
+      .setOrigin(0.5);
   }
 
   // ── 游戏切换（带淡出动画） ─────────────────────

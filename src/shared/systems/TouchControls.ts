@@ -1,8 +1,9 @@
 // 虚拟触控按钮系统：在 HUD 层创建半透明方向键和跳跃按钮
 // 支持多点触控，暴露与 InputManager 相同的布尔接口
+// 按钮尺寸/位置根据 layout.uiScale 和安全区动态缩放
 
 import Phaser from 'phaser';
-import { GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { layout } from '@shared/utils/Constants';
 
 export class TouchControls {
   private scene: Phaser.Scene;
@@ -44,6 +45,9 @@ export class TouchControls {
       }
     };
     this.scene.input.on('pointercancel', this.onPointerCancel);
+
+    // 窗口 resize 时重建按钮（安全区和缩放可能变化）
+    this.scene.scale.on('resize', this.repositionControls, this);
   }
 
   get jumpPressed(): boolean {
@@ -56,22 +60,52 @@ export class TouchControls {
     this.pausePressed = false;
   }
 
+  /** 销毁并重建所有按钮，适配新尺寸 */
+  private repositionControls(): void {
+    // 销毁旧的视觉和触控元素
+    this.zones.forEach((z) => z.destroy());
+    this.zones = [];
+    this.leftGraphics?.destroy();
+    this.rightGraphics?.destroy();
+    this.jumpGraphics?.destroy();
+    this.pauseGraphics?.destroy();
+    this.pointerMap.clear();
+
+    // 重置触控状态，避免残留按压
+    this.left = false;
+    this.right = false;
+    this.jumpHeld = false;
+    this._jumpJustPressed = false;
+
+    // 以新尺寸重建
+    this.createButtons();
+  }
+
   private createButtons(): void {
+    // 计算安全区偏移后的按钮位置
+    const leftX = layout.safeLeft + layout.scale(70);
+    const bottomY = layout.height - layout.safeBottom - layout.scale(60);
+    const rightX = layout.safeLeft + layout.scale(170);
+    const jumpX = layout.width - layout.safeRight - layout.scale(80);
+    const jumpY = layout.height - layout.safeBottom - layout.scale(80);
+    const pauseX = layout.width - layout.safeRight - layout.scale(30);
+    const pauseY = layout.safeTop + layout.scale(30);
+
     // ← 左方向键
-    this.leftGraphics = this.createArrowButton(70, GAME_HEIGHT - 60, true);
-    this.createZone(70, GAME_HEIGHT - 60, 90, 90, 'left');
+    this.leftGraphics = this.createArrowButton(leftX, bottomY, true);
+    this.createZone(leftX, bottomY, layout.scale(90, 44), layout.scale(90, 44), 'left');
 
     // → 右方向键
-    this.rightGraphics = this.createArrowButton(170, GAME_HEIGHT - 60, false);
-    this.createZone(170, GAME_HEIGHT - 60, 90, 90, 'right');
+    this.rightGraphics = this.createArrowButton(rightX, bottomY, false);
+    this.createZone(rightX, bottomY, layout.scale(90, 44), layout.scale(90, 44), 'right');
 
     // 跳跃按钮（右下角圆形）
-    this.jumpGraphics = this.createJumpButton(GAME_WIDTH - 80, GAME_HEIGHT - 80);
-    this.createZone(GAME_WIDTH - 80, GAME_HEIGHT - 80, 110, 110, 'jump');
+    this.jumpGraphics = this.createJumpButton(jumpX, jumpY);
+    this.createZone(jumpX, jumpY, layout.scale(110, 44), layout.scale(110, 44), 'jump');
 
     // 暂停按钮（右上角，加大触控区域）
-    this.pauseGraphics = this.createPauseButton(GAME_WIDTH - 30, 30);
-    this.createZone(GAME_WIDTH - 30, 30, 70, 70, 'pause');
+    this.pauseGraphics = this.createPauseButton(pauseX, pauseY);
+    this.createZone(pauseX, pauseY, layout.scale(70, 44), layout.scale(70, 44), 'pause');
   }
 
   private createArrowButton(
@@ -83,16 +117,18 @@ export class TouchControls {
     g.setPosition(x, y);
     g.setAlpha(0.3);
 
-    // 像素风箭头
+    const s = layout.uiScale;
+
+    // 像素风箭头（按 uiScale 缩放图形尺寸）
     g.fillStyle(0xffffff);
     if (flipX) {
       // ← 箭头
-      g.fillTriangle(-20, 0, 10, -18, 10, 18);
-      g.fillRect(10, -8, 10, 16);
+      g.fillTriangle(-20 * s, 0, 10 * s, -18 * s, 10 * s, 18 * s);
+      g.fillRect(10 * s, -8 * s, 10 * s, 16 * s);
     } else {
       // → 箭头
-      g.fillTriangle(20, 0, -10, -18, -10, 18);
-      g.fillRect(-20, -8, 10, 16);
+      g.fillTriangle(20 * s, 0, -10 * s, -18 * s, -10 * s, 18 * s);
+      g.fillRect(-20 * s, -8 * s, 10 * s, 16 * s);
     }
 
     g.setDepth(1000);
@@ -105,12 +141,14 @@ export class TouchControls {
     g.setPosition(x, y);
     g.setAlpha(0.3);
 
-    // 圆形 + 向上箭头
-    g.lineStyle(3, 0xffffff);
-    g.strokeCircle(0, 0, 40);
+    const s = layout.uiScale;
+
+    // 圆形 + 向上箭头（按 uiScale 缩放）
+    g.lineStyle(3 * s, 0xffffff);
+    g.strokeCircle(0, 0, 40 * s);
     g.fillStyle(0xffffff);
-    g.fillTriangle(0, -18, -14, 6, 14, 6);
-    g.fillRect(-5, 4, 10, 14);
+    g.fillTriangle(0, -18 * s, -14 * s, 6 * s, 14 * s, 6 * s);
+    g.fillRect(-5 * s, 4 * s, 10 * s, 14 * s);
 
     g.setDepth(1000);
     g.setScrollFactor(0);
@@ -122,10 +160,12 @@ export class TouchControls {
     g.setPosition(x, y);
     g.setAlpha(0.3);
 
-    // 暂停图标（两条竖线）
+    const s = layout.uiScale;
+
+    // 暂停图标（两条竖线，按 uiScale 缩放）
     g.fillStyle(0xffffff);
-    g.fillRect(-8, -10, 5, 20);
-    g.fillRect(3, -10, 5, 20);
+    g.fillRect(-8 * s, -10 * s, 5 * s, 20 * s);
+    g.fillRect(3 * s, -10 * s, 5 * s, 20 * s);
 
     g.setDepth(1000);
     g.setScrollFactor(0);
@@ -188,6 +228,7 @@ export class TouchControls {
   }
 
   destroy(): void {
+    this.scene.scale.off('resize', this.repositionControls, this);
     this.scene.input.off('pointercancel', this.onPointerCancel);
     this.zones.forEach((z) => z.destroy());
     this.zones = [];

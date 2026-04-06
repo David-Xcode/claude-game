@@ -1,7 +1,8 @@
 // 全局共享常量（各游戏通用）
 
-export const GAME_WIDTH = 800;
-export const GAME_HEIGHT = 480;
+// 设计参考尺寸（仅用于缩放计算，运行时尺寸请用 layout.width / layout.height）
+export { DESIGN_WIDTH, DESIGN_HEIGHT, layout } from './ResponsiveLayout';
+
 export const TILE_SIZE = 32;
 
 // 场景键

@@ -1,9 +1,11 @@
 // 中国象棋渲染器：程序化绘制棋盘、棋子（圆+汉字）、高亮效果
+// 支持动态布局，resize 时重算并重绘
 
 import Phaser from 'phaser';
+import { BoardLayout } from '@shared/utils/ResponsiveLayout';
 import {
   XIANGQI, XIANGQI_COLORS, XIANGQI_DEPTH,
-  PIECE_CHARS, Side, XiangqiDifficulty,
+  PIECE_CHARS, Side, XiangqiDifficulty, getXiangqiBoardLayout,
 } from '../data/XiangqiConstants';
 import { DIFFICULTY_CONFIGS } from '../data/DifficultyConfig';
 import { Position, Piece } from './XiangqiBoard';
@@ -21,13 +23,34 @@ export class XiangqiRenderer {
   private lastMoveGraphics!: Phaser.GameObjects.Graphics;
   private checkGraphics!: Phaser.GameObjects.Graphics;
 
+  // 动态棋盘布局（resize 时更新）
+  boardLayout!: BoardLayout;
+
+  // 缓存当前难度（resize 时重绘需要）
+  private currentDifficulty!: XiangqiDifficulty;
+
   // 棋子显示对象缓存
   private pieceObjects = new Map<string, PieceDisplay>();
   // 河界文字对象（避免泄漏）
   private riverTexts: Phaser.GameObjects.Text[] = [];
 
+  // 缓存棋盘状态引用（resize 时重绘棋子用）
+  private cachedGrid: (Piece | null)[][] | null = null;
+  // 缓存最后一步（resize 时重绘用）
+  private lastMoveFrom: Position | null = null;
+  private lastMoveTo: Position | null = null;
+  // 缓存选中状态（resize 时重绘用）
+  private selectedRow = -1;
+  private selectedCol = -1;
+  // 缓存合法走法（resize 时重绘用）
+  private cachedValidMoves: Position[] = [];
+  // 缓存将军状态（resize 时重绘用）
+  private checkRow = -1;
+  private checkCol = -1;
+
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
+    this.boardLayout = getXiangqiBoardLayout();
     this.boardGraphics = scene.add.graphics().setDepth(XIANGQI_DEPTH.BOARD);
     this.pieceGraphics = scene.add.graphics().setDepth(XIANGQI_DEPTH.PIECES);
     this.selectionGraphics = scene.add.graphics().setDepth(XIANGQI_DEPTH.SELECTED);
@@ -36,9 +59,62 @@ export class XiangqiRenderer {
     this.checkGraphics = scene.add.graphics().setDepth(XIANGQI_DEPTH.CHECK);
   }
 
+  // ── 布局重算与整体重绘 ────────────────────────
+
+  /** 重算布局参数（resize 时调用） */
+  recalculateLayout(): void {
+    this.boardLayout = getXiangqiBoardLayout();
+  }
+
+  /** 整体重绘：棋盘 + 所有棋子 + 高亮状态 */
+  redrawAll(): void {
+    this.recalculateLayout();
+    this.drawBoard(this.currentDifficulty);
+
+    // 重绘所有棋子
+    if (this.cachedGrid) {
+      this.drawAllPieces(this.cachedGrid);
+    }
+
+    // 重绘最后一步标记
+    if (this.lastMoveFrom && this.lastMoveTo) {
+      this.renderLastMove(this.lastMoveFrom, this.lastMoveTo);
+    }
+
+    // 重绘选中高亮
+    if (this.selectedRow >= 0) {
+      this.renderSelected(this.selectedRow, this.selectedCol);
+    }
+
+    // 重绘合法走法
+    if (this.cachedValidMoves.length > 0 && this.cachedGrid) {
+      this.renderValidMoves(this.cachedValidMoves, this.cachedGrid);
+    }
+
+    // 重绘将军警告
+    if (this.checkRow >= 0) {
+      this.renderCheckWarning(this.checkRow, this.checkCol);
+    }
+  }
+
+  /** 注册 resize 监听器（由 GameScene 调用一次） */
+  registerResizeHandler(): void {
+    this.scene.scale.on('resize', this.onResize, this);
+  }
+
+  /** 移除 resize 监听器（由 GameScene shutdown 时调用） */
+  removeResizeHandler(): void {
+    this.scene.scale.off('resize', this.onResize, this);
+  }
+
+  private onResize(): void {
+    this.redrawAll();
+  }
+
   // ── 棋盘绘制 ──────────────────────────────────
 
   drawBoard(difficulty: XiangqiDifficulty): void {
+    this.currentDifficulty = difficulty;
     const config = DIFFICULTY_CONFIGS[difficulty];
     const g = this.boardGraphics;
     g.clear();
@@ -47,11 +123,12 @@ export class XiangqiRenderer {
     this.riverTexts.forEach(t => t.destroy());
     this.riverTexts = [];
 
-    const gridW = (XIANGQI.COLS - 1) * XIANGQI.CELL_SIZE; // 8×44 = 352
-    const gridH = (XIANGQI.ROWS - 1) * XIANGQI.CELL_SIZE; // 9×44 = 396
-    const padding = 22;
-    const boardLeft = XIANGQI.BOARD_X - padding;
-    const boardTop = XIANGQI.BOARD_Y - padding;
+    const { boardX, boardY, cellSize } = this.boardLayout;
+    const gridW = (XIANGQI.COLS - 1) * cellSize;
+    const gridH = (XIANGQI.ROWS - 1) * cellSize;
+    const padding = Math.round(cellSize * 0.5);
+    const boardLeft = boardX - padding;
+    const boardTop = boardY - padding;
     const boardW = gridW + padding * 2;
     const boardH = gridH + padding * 2;
 
@@ -74,23 +151,23 @@ export class XiangqiRenderer {
     // 横线（10条，row 0-9）
     g.lineStyle(1, config.gridColor, 0.9);
     for (let r = 0; r < XIANGQI.ROWS; r++) {
-      const y = XIANGQI.BOARD_Y + r * XIANGQI.CELL_SIZE;
-      g.lineBetween(XIANGQI.BOARD_X, y, XIANGQI.BOARD_X + gridW, y);
+      const y = boardY + r * cellSize;
+      g.lineBetween(boardX, y, boardX + gridW, y);
     }
 
     // 竖线（9条，col 0-8）
     // 河界区域（row 4-5之间）内线只画两侧边线
     for (let c = 0; c < XIANGQI.COLS; c++) {
-      const x = XIANGQI.BOARD_X + c * XIANGQI.CELL_SIZE;
+      const x = boardX + c * cellSize;
       if (c === 0 || c === XIANGQI.COLS - 1) {
         // 边线贯穿
-        g.lineBetween(x, XIANGQI.BOARD_Y, x, XIANGQI.BOARD_Y + gridH);
+        g.lineBetween(x, boardY, x, boardY + gridH);
       } else {
         // 内线在河界断开
-        const riverTop = XIANGQI.BOARD_Y + 4 * XIANGQI.CELL_SIZE;
-        const riverBottom = XIANGQI.BOARD_Y + 5 * XIANGQI.CELL_SIZE;
-        g.lineBetween(x, XIANGQI.BOARD_Y, x, riverTop);
-        g.lineBetween(x, riverBottom, x, XIANGQI.BOARD_Y + gridH);
+        const riverTop = boardY + 4 * cellSize;
+        const riverBottom = boardY + 5 * cellSize;
+        g.lineBetween(x, boardY, x, riverTop);
+        g.lineBetween(x, riverBottom, x, boardY + gridH);
       }
     }
 
@@ -122,12 +199,14 @@ export class XiangqiRenderer {
   }
 
   private drawRiverText(): void {
-    const riverY = XIANGQI.BOARD_Y + 4.5 * XIANGQI.CELL_SIZE;
-    const leftX = XIANGQI.BOARD_X + 1.5 * XIANGQI.CELL_SIZE;
-    const rightX = XIANGQI.BOARD_X + 6.5 * XIANGQI.CELL_SIZE;
+    const { boardX, boardY, cellSize } = this.boardLayout;
+    const riverY = boardY + 4.5 * cellSize;
+    const leftX = boardX + 1.5 * cellSize;
+    const rightX = boardX + 6.5 * cellSize;
+    const fontSize = `${Math.max(12, Math.round(cellSize * 0.45))}px`;
 
     const style: Phaser.Types.GameObjects.Text.TextStyle = {
-      fontSize: '20px',
+      fontSize,
       color: '#5c3d1a',
       fontFamily: 'serif',
       fontStyle: 'bold',
@@ -142,6 +221,7 @@ export class XiangqiRenderer {
   // ── 棋子绘制 ──────────────────────────────────
 
   drawAllPieces(grid: (Piece | null)[][]): void {
+    this.cachedGrid = grid;
     this.clearAllPieces();
     for (let r = 0; r < XIANGQI.ROWS; r++) {
       for (let c = 0; c < XIANGQI.COLS; c++) {
@@ -153,7 +233,7 @@ export class XiangqiRenderer {
 
   drawPiece(row: number, col: number, piece: Piece): void {
     const { x, y } = this.gridToScreen(row, col);
-    const r = XIANGQI.PIECE_RADIUS;
+    const r = this.boardLayout.pieceRadius;
     const isRed = piece.side === Side.RED;
     const char = PIECE_CHARS[piece.side][piece.type];
     const g = this.pieceGraphics;
@@ -176,11 +256,12 @@ export class XiangqiRenderer {
 
     // 内圈装饰线
     g.lineStyle(1, borderColor, 0.6);
-    g.strokeCircle(x, y, r - 4);
+    g.strokeCircle(x, y, r - Math.max(2, Math.round(r * 0.2)));
 
-    // 汉字
+    // 汉字（大小按棋子半径缩放）
+    const fontSize = `${Math.max(10, Math.round(r * 1.05))}px`;
     const text = this.scene.add.text(x, y, char, {
-      fontSize: '20px',
+      fontSize,
       color: textColor,
       fontFamily: 'serif',
       fontStyle: 'bold',
@@ -192,19 +273,34 @@ export class XiangqiRenderer {
   // ── 高亮效果 ──────────────────────────────────
 
   highlightSelected(row: number, col: number): void {
+    this.selectedRow = row;
+    this.selectedCol = col;
+    this.renderSelected(row, col);
+  }
+
+  private renderSelected(row: number, col: number): void {
     this.selectionGraphics.clear();
     const { x, y } = this.gridToScreen(row, col);
     this.selectionGraphics.lineStyle(3, XIANGQI_COLORS.SELECTED, 0.8);
-    this.selectionGraphics.strokeCircle(x, y, XIANGQI.PIECE_RADIUS + 3);
+    this.selectionGraphics.strokeCircle(x, y, this.boardLayout.pieceRadius + 3);
   }
 
   clearSelection(): void {
+    this.selectedRow = -1;
+    this.selectedCol = -1;
     this.selectionGraphics.clear();
   }
 
   showValidMoves(positions: Position[], grid: (Piece | null)[][]): void {
+    this.cachedValidMoves = positions;
+    this.renderValidMoves(positions, grid);
+  }
+
+  private renderValidMoves(positions: Position[], grid: (Piece | null)[][]): void {
     const g = this.validMoveGraphics;
     g.clear();
+    const r = this.boardLayout.pieceRadius;
+    const dotR = Math.max(3, Math.round(r * 0.25));
 
     for (const pos of positions) {
       const { x, y } = this.gridToScreen(pos.row, pos.col);
@@ -213,20 +309,27 @@ export class XiangqiRenderer {
       if (isCapture) {
         // 吃子位置：红色环
         g.lineStyle(2, XIANGQI_COLORS.VALID_CAPTURE, 0.7);
-        g.strokeCircle(x, y, XIANGQI.PIECE_RADIUS + 2);
+        g.strokeCircle(x, y, r + 2);
       } else {
         // 空位：绿色小点
         g.fillStyle(XIANGQI_COLORS.VALID_MOVE, 0.6);
-        g.fillCircle(x, y, 5);
+        g.fillCircle(x, y, dotR);
       }
     }
   }
 
   clearValidMoves(): void {
+    this.cachedValidMoves = [];
     this.validMoveGraphics.clear();
   }
 
   showLastMove(from: Position, to: Position): void {
+    this.lastMoveFrom = from;
+    this.lastMoveTo = to;
+    this.renderLastMove(from, to);
+  }
+
+  private renderLastMove(from: Position, to: Position): void {
     const g = this.lastMoveGraphics;
     g.clear();
 
@@ -245,8 +348,8 @@ export class XiangqiRenderer {
     cx: number, cy: number,
     color: number, alpha: number
   ): void {
-    const s = XIANGQI.PIECE_RADIUS + 2;
-    const len = 8;
+    const s = this.boardLayout.pieceRadius + 2;
+    const len = Math.max(4, Math.round(s * 0.4));
     g.lineStyle(2, color, alpha);
 
     // 左上
@@ -264,11 +367,19 @@ export class XiangqiRenderer {
   }
 
   showCheckWarning(row: number, col: number): void {
+    this.checkRow = row;
+    this.checkCol = col;
+    this.renderCheckWarning(row, col);
+  }
+
+  private renderCheckWarning(row: number, col: number): void {
     const { x, y } = this.gridToScreen(row, col);
     const g = this.checkGraphics;
+    this.scene.tweens.killTweensOf(g);
     g.clear();
+    g.setAlpha(1);
     g.lineStyle(3, XIANGQI_COLORS.CHECK_WARNING, 0.8);
-    g.strokeCircle(x, y, XIANGQI.PIECE_RADIUS + 5);
+    g.strokeCircle(x, y, this.boardLayout.pieceRadius + 5);
 
     // 闪烁效果
     this.scene.tweens.add({
@@ -281,6 +392,8 @@ export class XiangqiRenderer {
   }
 
   clearCheckWarning(): void {
+    this.checkRow = -1;
+    this.checkCol = -1;
     this.scene.tweens.killTweensOf(this.checkGraphics);
     this.checkGraphics.clear();
     this.checkGraphics.setAlpha(1);
@@ -289,8 +402,9 @@ export class XiangqiRenderer {
   // ── 坐标转换 ──────────────────────────────────
 
   screenToGrid(screenX: number, screenY: number): Position | null {
-    const col = Math.round((screenX - XIANGQI.BOARD_X) / XIANGQI.CELL_SIZE);
-    const row = Math.round((screenY - XIANGQI.BOARD_Y) / XIANGQI.CELL_SIZE);
+    const { boardX, boardY, cellSize } = this.boardLayout;
+    const col = Math.round((screenX - boardX) / cellSize);
+    const row = Math.round((screenY - boardY) / cellSize);
 
     if (row < 0 || row >= XIANGQI.ROWS || col < 0 || col >= XIANGQI.COLS) {
       return null;
@@ -298,15 +412,15 @@ export class XiangqiRenderer {
 
     const { x, y } = this.gridToScreen(row, col);
     const dist = Math.sqrt((screenX - x) ** 2 + (screenY - y) ** 2);
-    if (dist > XIANGQI.CELL_SIZE * 0.6) return null;
+    if (dist > cellSize * 0.6) return null;
 
     return { row, col };
   }
 
   gridToScreen(row: number, col: number): { x: number; y: number } {
     return {
-      x: XIANGQI.BOARD_X + col * XIANGQI.CELL_SIZE,
-      y: XIANGQI.BOARD_Y + row * XIANGQI.CELL_SIZE,
+      x: this.boardLayout.boardX + col * this.boardLayout.cellSize,
+      y: this.boardLayout.boardY + row * this.boardLayout.cellSize,
     };
   }
 
@@ -326,5 +440,11 @@ export class XiangqiRenderer {
     this.validMoveGraphics.clear();
     this.lastMoveGraphics.clear();
     this.clearCheckWarning();
+    this.cachedGrid = null;
+    this.lastMoveFrom = null;
+    this.lastMoveTo = null;
+    this.selectedRow = -1;
+    this.selectedCol = -1;
+    this.cachedValidMoves = [];
   }
 }

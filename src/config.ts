@@ -1,12 +1,9 @@
-// Phaser 游戏全局配置
+// Phaser 游戏全局配置 — RESIZE 模式，canvas 填满视口
 
 import Phaser from 'phaser';
-import { GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
 
 export const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
-  width: GAME_WIDTH,
-  height: GAME_HEIGHT,
   parent: 'game-container',
   backgroundColor: '#000000',
   pixelArt: true,
@@ -21,8 +18,10 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
     activePointers: 4,
   },
   scale: {
-    mode: Phaser.Scale.FIT,
+    mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH,
+    min: { width: 320, height: 180 },
+    max: { width: 1920, height: 1080 },
   },
   // 场景在 main.ts 中动态添加
   scene: [],

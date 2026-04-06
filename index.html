@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <!-- PWA 相关元标签 -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -11,6 +11,12 @@
   <link rel="apple-touch-icon" href="./icon-192.png">
   <title>Pixel Adventure</title>
   <style>
+    :root {
+      --sat: env(safe-area-inset-top, 0px);
+      --sab: env(safe-area-inset-bottom, 0px);
+      --sal: env(safe-area-inset-left, 0px);
+      --sar: env(safe-area-inset-right, 0px);
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
       width: 100%;
@@ -38,11 +44,11 @@
       align-items: center;
       color: #fff;
       font-family: monospace;
-      font-size: 20px;
+      font-size: clamp(16px, 4vw, 24px);
       text-align: center;
     }
     #rotate-overlay .rotate-icon {
-      font-size: 60px;
+      font-size: clamp(40px, 12vw, 72px);
       animation: rotate-hint 2s ease-in-out infinite;
     }
     @keyframes rotate-hint {

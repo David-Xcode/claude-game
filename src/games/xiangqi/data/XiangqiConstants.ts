@@ -1,5 +1,7 @@
 // 中国象棋专用常量
 
+import { layout, BoardLayout } from '@shared/utils/ResponsiveLayout';
+
 // 游戏模式
 export enum XiangqiMode {
   SINGLE_PLAYER = 'singlePlayer',
@@ -52,21 +54,21 @@ export const PIECE_CHARS: Record<Side, Record<PieceType, string>> = {
   },
 };
 
-// 棋盘尺寸与布局常量
+// 棋盘尺寸与布局常量（仅保留非空间类常量）
 export const XIANGQI = {
   COLS: 9,
   ROWS: 10,
-  CELL_SIZE: 44,
-  PIECE_RADIUS: 19,
-  // 棋盘左上角第一个交叉点坐标（居中于 800×480 画布）
-  BOARD_X: 224,
-  BOARD_Y: 42,
   // AI 延迟（毫秒）
   AI_DELAY_MIN: 400,
   AI_DELAY_MAX: 1000,
   // 胜利后等待时间
   WIN_DELAY: 1500,
 } as const;
+
+/** 根据当前屏幕尺寸计算象棋棋盘布局 */
+export function getXiangqiBoardLayout(): BoardLayout {
+  return layout.boardLayout(9, 10, 50, 0.42);
+}
 
 // 颜色
 export const XIANGQI_COLORS = {

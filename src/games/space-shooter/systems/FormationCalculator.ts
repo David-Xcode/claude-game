@@ -2,7 +2,7 @@
 // 纯函数，无副作用
 
 import Phaser from 'phaser';
-import { GAME_WIDTH } from '@shared/utils/Constants';
+import { layout } from '@shared/utils/Constants';
 import { FormationType } from '../data/ShooterConstants';
 
 // ═══════════════════════════════════════════════
@@ -16,7 +16,7 @@ export function calculateFormationPositions(
 ): { x: number; y: number }[] {
   const positions: { x: number; y: number }[] = [];
   const margin = 40;
-  const usableWidth = GAME_WIDTH - margin * 2;
+  const usableWidth = layout.width - margin * 2;
 
   switch (formation) {
     case FormationType.LINE_HORIZONTAL: {
@@ -24,7 +24,7 @@ export function calculateFormationPositions(
       const spacing = count > 1 ? usableWidth / (count - 1) : 0;
       for (let i = 0; i < count; i++) {
         positions.push({
-          x: count > 1 ? margin + spacing * i : GAME_WIDTH / 2,
+          x: count > 1 ? margin + spacing * i : layout.width / 2,
           y: -20,
         });
       }
@@ -33,7 +33,7 @@ export function calculateFormationPositions(
 
     case FormationType.LINE_VERTICAL: {
       // 同一 x 位置，y 略微分散（通过 spawnDelay 实现间隔）
-      const x = Phaser.Math.Between(margin + 40, GAME_WIDTH - margin - 40);
+      const x = Phaser.Math.Between(margin + 40, layout.width - margin - 40);
       for (let i = 0; i < count; i++) {
         positions.push({ x, y: -20 });
       }
@@ -42,7 +42,7 @@ export function calculateFormationPositions(
 
     case FormationType.V_FORMATION: {
       // V 字形从中心展开
-      const cx = GAME_WIDTH / 2;
+      const cx = layout.width / 2;
       for (let i = 0; i < count; i++) {
         const side = i % 2 === 0 ? -1 : 1;
         const row = Math.floor(i / 2);
@@ -56,7 +56,7 @@ export function calculateFormationPositions(
 
     case FormationType.CIRCLE_IN: {
       // 圆形散布，从外围向中心汇聚（初始位置在屏幕上方散开）
-      const cx = GAME_WIDTH / 2;
+      const cx = layout.width / 2;
       for (let i = 0; i < count; i++) {
         const angle = (Math.PI * 2 / count) * i - Math.PI / 2;
         positions.push({
@@ -71,7 +71,7 @@ export function calculateFormationPositions(
       // 随机 x 位置
       for (let i = 0; i < count; i++) {
         positions.push({
-          x: Phaser.Math.Between(margin, GAME_WIDTH - margin),
+          x: Phaser.Math.Between(margin, layout.width - margin),
           y: Phaser.Math.Between(-40, -10),
         });
       }
@@ -83,7 +83,7 @@ export function calculateFormationPositions(
       for (let i = 0; i < count; i++) {
         const fromLeft = i % 2 === 0;
         positions.push({
-          x: fromLeft ? -20 : GAME_WIDTH + 20,
+          x: fromLeft ? -20 : layout.width + 20,
           y: Phaser.Math.Between(40, 200),
         });
       }
@@ -94,7 +94,7 @@ export function calculateFormationPositions(
       // 默认随机
       for (let i = 0; i < count; i++) {
         positions.push({
-          x: Phaser.Math.Between(margin, GAME_WIDTH - margin),
+          x: Phaser.Math.Between(margin, layout.width - margin),
           y: -20,
         });
       }

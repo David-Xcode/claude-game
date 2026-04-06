@@ -3,7 +3,7 @@
 
 import Phaser from 'phaser';
 import { ShooterEnemy } from '../ShooterEnemy';
-import { GAME_WIDTH } from '@shared/utils/Constants';
+import { layout } from '@shared/utils/Constants';
 import { PowerUpType, SHOOTER_COLORS } from '../../data/ShooterConstants';
 
 const TEXTURE_KEY = 'enemy_carrier';
@@ -54,7 +54,7 @@ export class Carrier extends ShooterEnemy {
 
     // 缓慢水平漂移
     this.x += Math.sin(time * 0.0006) * 0.5;
-    this.x = Phaser.Math.Clamp(this.x, 40, GAME_WIDTH - 40);
+    this.x = Phaser.Math.Clamp(this.x, 40, layout.width - 40);
 
     // HP 阈值释放无人机
     const hpPercent = this.hp / this.maxHp;
@@ -83,7 +83,7 @@ export class Carrier extends ShooterEnemy {
 
   isOffScreen(): boolean {
     if (this.hovering) {
-      return this.y > 500 || this.x < -60 || this.x > 860;
+      return this.y > layout.height + 50 || this.x < -60 || this.x > layout.width + 60;
     }
     return super.isOffScreen();
   }

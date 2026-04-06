@@ -2,7 +2,7 @@
 // 每层以不同速度向下滚动，产生纵深感
 
 import Phaser from 'phaser';
-import { GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { layout } from '@shared/utils/Constants';
 import { SHOOTER, SHOOTER_COLORS, SHOOTER_DEPTH } from '../data/ShooterConstants';
 
 /** 单个滚动层的配置 */
@@ -18,6 +18,7 @@ const TEX_H = 480;
 export class ScrollingBackground {
   private scene: Phaser.Scene;
   private layers: ScrollLayer[] = [];
+  private resizeHandler?: () => void;
 
   constructor(scene: Phaser.Scene, stageIndex: number) {
     this.scene = scene;
@@ -36,6 +37,15 @@ export class ScrollingBackground {
         this.createCityStage();
         break;
     }
+
+    // 监听 resize，实时调整 TileSprite 尺寸和位置
+    this.resizeHandler = () => {
+      for (const layer of this.layers) {
+        layer.tileSprite.setPosition(layout.width / 2, layout.height / 2);
+        layer.tileSprite.setSize(layout.width, layout.height);
+      }
+    };
+    this.scene.scale.on('resize', this.resizeHandler);
   }
 
   /** 每帧更新滚动位置 */
@@ -48,6 +58,11 @@ export class ScrollingBackground {
 
   /** 销毁所有层 */
   destroy(): void {
+    // 解绑 resize 监听
+    if (this.resizeHandler) {
+      this.scene.scale.off('resize', this.resizeHandler);
+      this.resizeHandler = undefined;
+    }
     for (const layer of this.layers) {
       layer.tileSprite.destroy();
     }
@@ -324,10 +339,10 @@ export class ScrollingBackground {
   /** 添加一个 TileSprite 滚动层 */
   private addLayer(textureKey: string, speed: number, depth: number): void {
     const tileSprite = this.scene.add.tileSprite(
-      GAME_WIDTH / 2,
-      GAME_HEIGHT / 2,
-      GAME_WIDTH,
-      GAME_HEIGHT,
+      layout.width / 2,
+      layout.height / 2,
+      layout.width,
+      layout.height,
       textureKey
     );
     tileSprite.setDepth(depth);

@@ -1,5 +1,6 @@
 // 共享 UI 工具：按钮创建、动画、触屏检测
 import Phaser from 'phaser';
+import { layout } from '@shared/utils/Constants';
 
 const UI_FONT = 'monospace';
 
@@ -18,7 +19,7 @@ export function createMenuButton(
   const text = scene.add
     .text(x, y, label, { fontSize, color, fontFamily: UI_FONT })
     .setOrigin(0.5)
-    .setPadding(40, 15, 40, 15)
+    .setPadding(layout.scale(40), layout.scale(15), layout.scale(40), layout.scale(15))
     .setInteractive({ useHandCursor: true });
   text.once('pointerdown', handler);
   return text;

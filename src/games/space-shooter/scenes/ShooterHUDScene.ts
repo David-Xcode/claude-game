@@ -2,8 +2,8 @@
 // 显示血量、分数、连击、炸弹、武器类型、暂停按钮、触控控制
 
 import Phaser from 'phaser';
-import { SceneKey, GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
-import { SHOOTER, SHOOTER_COLORS, WeaponType, SHOOTER_EVENTS } from '../data/ShooterConstants';
+import { SceneKey, layout } from '@shared/utils/Constants';
+import { SHOOTER, WeaponType, SHOOTER_EVENTS } from '../data/ShooterConstants';
 import { ShooterTouchControls } from '../systems/ShooterTouchControls';
 
 // 武器名称映射
@@ -32,11 +32,21 @@ export class ShooterHUDScene extends Phaser.Scene {
   // 关卡名文字
   private stageText!: Phaser.GameObjects.Text;
 
+  // 暂停按钮引用（resize 时重建需要销毁）
+  private pauseBtn?: Phaser.GameObjects.Graphics;
+  private pauseZone?: Phaser.GameObjects.Zone;
+
   // 触控系统（暴露给 ShooterGameScene 的 inputMgr）
   public shooterTouchControls?: ShooterTouchControls;
 
   // 游戏场景事件引用（销毁时解绑）
   private gameScene?: Phaser.Scene;
+
+  // 缓存当前 HUD 状态，resize 重建后恢复
+  private cachedHealth: number = SHOOTER.MAX_HEALTH;
+  private cachedBombs: number = SHOOTER.MAX_BOMBS;
+  private cachedWeapon: WeaponType = WeaponType.VULCAN;
+  private cachedWeaponLevel = 1;
 
   constructor() {
     super({ key: SceneKey.SHOOTER_HUD });
@@ -53,12 +63,26 @@ export class ShooterHUDScene extends Phaser.Scene {
     // 注册 shutdown 清理
     this.events.on('shutdown', this.shutdown, this);
 
+    // 构建所有 HUD 元素
+    this.buildHUD();
+
+    // 监听 ShooterGameScene 事件
+    this.bindGameEvents();
+
+    // 监听窗口尺寸变化，重建 HUD
+    this.scale.on('resize', this.onResize, this);
+  }
+
+  /** 构建/重建全部 HUD 元素 */
+  private buildHUD(): void {
+    const safeT = layout.safeTop;
+
     // ─── 左上角：血量条 ───
     this.createHealthBar();
 
     // ─── 上方居中：分数 + 连击 ───
-    this.scoreText = this.add.text(GAME_WIDTH / 2, 10, 'SCORE: 0', {
-      fontSize: '16px',
+    this.scoreText = this.add.text(layout.centerX, safeT + layout.scale(10), 'SCORE: 0', {
+      fontSize: layout.fontSize(16),
       color: '#ffffff',
       fontFamily: 'monospace',
       fontStyle: 'bold',
@@ -67,8 +91,8 @@ export class ShooterHUDScene extends Phaser.Scene {
     });
     this.scoreText.setOrigin(0.5, 0);
 
-    this.comboText = this.add.text(GAME_WIDTH / 2, 30, '', {
-      fontSize: '12px',
+    this.comboText = this.add.text(layout.centerX, safeT + layout.scale(30), '', {
+      fontSize: layout.fontSize(12),
       color: '#ffdd44',
       fontFamily: 'monospace',
       stroke: '#000000',
@@ -81,20 +105,25 @@ export class ShooterHUDScene extends Phaser.Scene {
     this.createPauseButton();
 
     // ─── 左下角：武器类型 + 等级指示 ───
-    this.weaponText = this.add.text(15, GAME_HEIGHT - 30, 'VULCAN', {
-      fontSize: '12px',
-      color: '#00ccff',
-      fontFamily: 'monospace',
-      fontStyle: 'bold',
-      stroke: '#000000',
-      strokeThickness: 2,
-    });
+    this.weaponText = this.add.text(
+      layout.safeLeft + layout.scale(15),
+      layout.height - layout.safeBottom - layout.scale(30),
+      'VULCAN',
+      {
+        fontSize: layout.fontSize(12),
+        color: '#00ccff',
+        fontFamily: 'monospace',
+        fontStyle: 'bold',
+        stroke: '#000000',
+        strokeThickness: 2,
+      },
+    );
 
     this.createWeaponLevelDots();
 
     // ─── 关卡名（显示后淡出） ───
-    this.stageText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 60, '', {
-      fontSize: '24px',
+    this.stageText = this.add.text(layout.centerX, layout.centerY - layout.scale(60), '', {
+      fontSize: layout.fontSize(24),
       color: '#ffdd44',
       fontFamily: 'monospace',
       fontStyle: 'bold',
@@ -103,9 +132,40 @@ export class ShooterHUDScene extends Phaser.Scene {
     });
     this.stageText.setOrigin(0.5);
     this.stageText.setAlpha(0);
+  }
 
-    // ─── 监听 ShooterGameScene 事件 ───
-    this.bindGameEvents();
+  // ═══════════════════════════════════════════════
+  // Resize 处理
+  // ═══════════════════════════════════════════════
+
+  /** 窗口尺寸变化时销毁并重建全部 HUD 元素 */
+  private onResize(): void {
+    // 销毁所有子对象（保留 touchControls 和事件绑定）
+    this.healthIcons = [];
+    this.bombIcons = [];
+    this.levelDots = [];
+    this.pauseBtn = undefined;
+    this.pauseZone = undefined;
+    this.children.removeAll(true);
+
+    // 触控按钮也需重建
+    if (this.sys.game.device.input.touch) {
+      this.shooterTouchControls?.destroy();
+      this.shooterTouchControls = new ShooterTouchControls(this);
+
+      // 重新绑定到 inputMgr
+      const gameScene = this.scene.get(SceneKey.SHOOTER_GAME) as any;
+      if (gameScene?.getInputManager) {
+        gameScene.getInputManager().setShooterTouchControls(this.shooterTouchControls);
+      }
+    }
+
+    this.buildHUD();
+
+    // 恢复缓存的 HUD 状态
+    this.updateHealth(this.cachedHealth);
+    this.updateBombs(this.cachedBombs);
+    this.updateWeapon(this.cachedWeapon, this.cachedWeaponLevel);
   }
 
   // ═══════════════════════════════════════════════
@@ -143,13 +203,19 @@ export class ShooterHUDScene extends Phaser.Scene {
     this.healthIcons.forEach((icon) => icon.destroy());
     this.healthIcons = [];
 
+    const s = layout.uiScale;
+    const gap = layout.scale(22);
+    const baseX = layout.safeLeft + layout.scale(20);
+    const baseY = layout.safeTop + layout.scale(18);
+
     for (let i = 0; i < SHOOTER.MAX_HEALTH; i++) {
       const heart = this.add.graphics();
       heart.fillStyle(0xff4466);
-      heart.fillCircle(-4, 0, 4);
-      heart.fillCircle(4, 0, 4);
-      heart.fillTriangle(-8, 1, 8, 1, 0, 9);
-      heart.setPosition(20 + i * 22, 18);
+      // 心形按 uiScale 缩放
+      heart.fillCircle(-4 * s, 0, 4 * s);
+      heart.fillCircle(4 * s, 0, 4 * s);
+      heart.fillTriangle(-8 * s, 1 * s, 8 * s, 1 * s, 0, 9 * s);
+      heart.setPosition(baseX + i * gap, baseY);
       this.healthIcons.push(heart);
     }
   }
@@ -159,30 +225,43 @@ export class ShooterHUDScene extends Phaser.Scene {
     this.bombIcons.forEach((icon) => icon.destroy());
     this.bombIcons = [];
 
+    const s = layout.uiScale;
+    const gap = layout.scale(20);
+    const pauseWidth = layout.scale(50);
+    // 炸弹区域从暂停按钮左侧开始向左排列
+    const baseX = layout.width - layout.safeRight - pauseWidth - layout.scale(10);
+    const baseY = layout.safeTop + layout.scale(18);
+
     for (let i = 0; i < SHOOTER.MAX_BOMBS; i++) {
       const bomb = this.add.graphics();
       bomb.fillStyle(0xffcc00);
-      bomb.fillCircle(0, 2, 6);
+      bomb.fillCircle(0, 2 * s, 6 * s);
       // 引信
-      bomb.lineStyle(2, 0xff6600);
-      bomb.lineBetween(0, -4, 2, -8);
-      bomb.setPosition(GAME_WIDTH - 100 + i * 20, 18);
+      bomb.lineStyle(2 * s, 0xff6600);
+      bomb.lineBetween(0, -4 * s, 2 * s, -8 * s);
+      // 从右向左排列
+      bomb.setPosition(baseX - (SHOOTER.MAX_BOMBS - 1 - i) * gap, baseY);
       this.bombIcons.push(bomb);
     }
   }
 
   /** 创建暂停按钮 */
   private createPauseButton(): void {
-    const pauseBtn = this.add.graphics();
-    pauseBtn.setPosition(GAME_WIDTH - 30, 18);
-    pauseBtn.fillStyle(0xffffff, 0.5);
-    pauseBtn.fillRect(-5, -8, 4, 16);
-    pauseBtn.fillRect(3, -8, 4, 16);
+    const s = layout.uiScale;
+    const btnX = layout.width - layout.safeRight - layout.scale(30);
+    const btnY = layout.safeTop + layout.scale(18);
+
+    this.pauseBtn = this.add.graphics();
+    this.pauseBtn.setPosition(btnX, btnY);
+    this.pauseBtn.fillStyle(0xffffff, 0.5);
+    this.pauseBtn.fillRect(-5 * s, -8 * s, 4 * s, 16 * s);
+    this.pauseBtn.fillRect(3 * s, -8 * s, 4 * s, 16 * s);
 
     // 触控热区
-    const zone = this.add.zone(GAME_WIDTH - 30, 18, 50, 50);
-    zone.setInteractive();
-    zone.on('pointerdown', () => {
+    const zoneSize = layout.scale(50, 40);
+    this.pauseZone = this.add.zone(btnX, btnY, zoneSize, zoneSize);
+    this.pauseZone.setInteractive();
+    this.pauseZone.on('pointerdown', () => {
       const gameScene = this.scene.get(SceneKey.SHOOTER_GAME);
       if (gameScene?.sys?.isActive()) {
         gameScene.scene.launch(SceneKey.SHOOTER_PAUSE);
@@ -196,11 +275,17 @@ export class ShooterHUDScene extends Phaser.Scene {
     this.levelDots.forEach((d) => d.destroy());
     this.levelDots = [];
 
+    const s = layout.uiScale;
+    const gap = layout.scale(12);
+    const dotRadius = 3 * s;
+    const baseX = layout.safeLeft + layout.scale(80);
+    const baseY = layout.height - layout.safeBottom - layout.scale(24);
+
     for (let i = 0; i < 3; i++) {
       const dot = this.add.graphics();
       dot.fillStyle(0x00ccff, i === 0 ? 1 : 0.3);
-      dot.fillCircle(0, 0, 3);
-      dot.setPosition(80 + i * 12, GAME_HEIGHT - 24);
+      dot.fillCircle(0, 0, dotRadius);
+      dot.setPosition(baseX + i * gap, baseY);
       this.levelDots.push(dot);
     }
   }
@@ -210,6 +295,7 @@ export class ShooterHUDScene extends Phaser.Scene {
   // ═══════════════════════════════════════════════
 
   private updateHealth(health: number): void {
+    this.cachedHealth = health;
     this.healthIcons.forEach((icon, i) => {
       icon.setAlpha(i < health ? 1 : 0.15);
     });
@@ -229,22 +315,30 @@ export class ShooterHUDScene extends Phaser.Scene {
   }
 
   private updateBombs(bombs: number): void {
+    this.cachedBombs = bombs;
     this.bombIcons.forEach((icon, i) => {
       icon.setAlpha(i < bombs ? 1 : 0.15);
     });
   }
 
   private updateWeapon(weapon: WeaponType, level: number): void {
+    // 缓存状态供 resize 后恢复
+    this.cachedWeapon = weapon;
+    this.cachedWeaponLevel = level;
+
     const info = WEAPON_DISPLAY[weapon] ?? WEAPON_DISPLAY[WeaponType.VULCAN];
     this.weaponText.setText(info.name);
     this.weaponText.setColor(info.color);
+
+    const s = layout.uiScale;
+    const dotRadius = 3 * s;
 
     // 更新等级圆点
     this.levelDots.forEach((dot, i) => {
       dot.clear();
       const color = Phaser.Display.Color.HexStringToColor(info.color).color;
       dot.fillStyle(color, i < level ? 1 : 0.3);
-      dot.fillCircle(0, 0, 3);
+      dot.fillCircle(0, 0, dotRadius);
     });
   }
 
@@ -294,6 +388,7 @@ export class ShooterHUDScene extends Phaser.Scene {
   // ═══════════════════════════════════════════════
 
   shutdown(): void {
+    this.scale.off('resize', this.onResize, this);
     this.unbindGameEvents();
     this.shooterTouchControls?.destroy();
     this.shooterTouchControls = undefined;

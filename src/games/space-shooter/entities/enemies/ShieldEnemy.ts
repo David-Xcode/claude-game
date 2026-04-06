@@ -3,7 +3,7 @@
 
 import Phaser from 'phaser';
 import { ShooterEnemy } from '../ShooterEnemy';
-import { GAME_WIDTH } from '@shared/utils/Constants';
+import { layout } from '@shared/utils/Constants';
 import { PowerUpType, SHOOTER_COLORS } from '../../data/ShooterConstants';
 
 const TEXTURE_KEY = 'enemy_shield';
@@ -66,7 +66,7 @@ export class ShieldEnemy extends ShooterEnemy {
   updateBehavior(time: number, _delta: number): void {
     // 水平漂移
     this.x = this.spawnX + Math.sin(time * DRIFT_SPEED + this.phaseOffset) * DRIFT_AMPLITUDE;
-    this.x = Phaser.Math.Clamp(this.x, 20, GAME_WIDTH - 20);
+    this.x = Phaser.Math.Clamp(this.x, 20, layout.width - 20);
 
     // 护盾激活时发出蓝色光泽
     if (this.shieldActive && Math.floor(time / 300) % 2 === 0) {

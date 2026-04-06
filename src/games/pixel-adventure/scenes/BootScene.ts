@@ -1,7 +1,7 @@
 // 启动场景：生成所有纹理资源，显示加载进度
 
 import Phaser from 'phaser';
-import { SceneKey, GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { SceneKey, layout } from '@shared/utils/Constants';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -11,11 +11,11 @@ export class BootScene extends Phaser.Scene {
   create(): void {
     // 显示加载文字
     const text = this.add.text(
-      GAME_WIDTH / 2,
-      GAME_HEIGHT / 2,
+      layout.width / 2,
+      layout.height / 2,
       'Loading...',
       {
-        fontSize: '24px',
+        fontSize: layout.fontSize(24),
         color: '#ffffff',
         fontFamily: 'monospace',
       }

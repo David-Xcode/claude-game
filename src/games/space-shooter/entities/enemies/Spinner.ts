@@ -3,6 +3,7 @@
 
 import Phaser from 'phaser';
 import { ShooterEnemy } from '../ShooterEnemy';
+import { layout } from '@shared/utils/Constants';
 import { PowerUpType, SHOOTER_COLORS } from '../../data/ShooterConstants';
 
 const TEXTURE_KEY = 'enemy_spinner';
@@ -75,9 +76,9 @@ export class Spinner extends ShooterEnemy {
   isOffScreen(): boolean {
     // 只在飞出画面很远时回收
     return (
-      this.y > 600 ||
+      this.y > layout.height + 120 ||
       this.y < -200 ||
-      this.x > 900 ||
+      this.x > layout.width + 100 ||
       this.x < -100
     );
   }

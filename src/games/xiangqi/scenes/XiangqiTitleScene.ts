@@ -1,7 +1,8 @@
 // 中国象棋标题场景：模式选择（单人/双人）+ 难度选择
+// 支持 resize 时销毁并重建全部 UI
 
 import Phaser from 'phaser';
-import { SceneKey, GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { SceneKey, layout } from '@shared/utils/Constants';
 import { XiangqiMode, XiangqiDifficulty, XIANGQI_COLORS } from '../data/XiangqiConstants';
 import { lockLandscape } from '@shared/utils/OrientationManager';
 import { fadeToScene } from '@shared/utils/SceneTransition';
@@ -14,6 +15,8 @@ export class XiangqiTitleScene extends Phaser.Scene {
   private modeTexts: Phaser.GameObjects.Text[] = [];
   private diffObjects: Phaser.GameObjects.GameObject[] = [];
   private subtitleText!: Phaser.GameObjects.Text;
+  // 标题主体（浮动动画目标）
+  private titleText!: Phaser.GameObjects.Text;
 
   constructor() {
     super({ key: SceneKey.XIANGQI_TITLE });
@@ -28,75 +31,7 @@ export class XiangqiTitleScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(XIANGQI_COLORS.BG);
     this.cameras.main.fadeIn(500);
 
-    const isTouch = this.sys.game.device.input.touch;
-
-    // 装饰性迷你棋盘
-    this.drawMiniBoardPreview();
-
-    // 标题发光层
-    this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT / 4 - 20, 'XIANGQI', {
-        fontSize: '48px',
-        color: '#d4a76a',
-        fontFamily: 'monospace',
-        fontStyle: 'bold',
-      })
-      .setOrigin(0.5)
-      .setAlpha(0.3)
-      .setBlendMode(Phaser.BlendModes.ADD);
-
-    // 标题主体
-    const title = this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT / 4 - 22, 'XIANGQI', {
-        fontSize: '48px',
-        color: '#ffffff',
-        fontFamily: 'monospace',
-        fontStyle: 'bold',
-        stroke: '#000000',
-        strokeThickness: 4,
-      })
-      .setOrigin(0.5);
-
-    this.tweens.add({
-      targets: title,
-      y: '-=6',
-      duration: 1800,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.easeInOut',
-    });
-
-    // 中文副标题
-    this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT / 4 + 15, '中国象棋', {
-        fontSize: '16px',
-        color: '#8b7355',
-        fontFamily: 'serif',
-      })
-      .setOrigin(0.5);
-
-    // 阶段提示
-    this.subtitleText = this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT / 4 + 38, '- Select Mode -', {
-        fontSize: '14px',
-        color: '#8b7355',
-        fontFamily: 'monospace',
-      })
-      .setOrigin(0.5);
-
-    // 模式选择按钮
-    this.createModeButtons(isTouch);
-
-    // 返回大厅
-    const backLabel = isTouch ? '[ Back ]' : '[ ESC ] Back to Hub';
-    const backText = this.add.text(20, 20, backLabel, {
-      fontSize: '14px',
-      color: '#888888',
-      fontFamily: 'monospace',
-    });
-    backText.setPadding(10, 8, 10, 8);
-    backText.setInteractive();
-    backText.on('pointerdown', () => this.goToHub());
+    this.buildUI();
 
     // 键盘监听
     this.input.keyboard?.on('keydown-ESC', () => {
@@ -110,12 +45,107 @@ export class XiangqiTitleScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-ONE', () => this.handleKeyPress(0));
     this.input.keyboard?.on('keydown-TWO', () => this.handleKeyPress(1));
     this.input.keyboard?.on('keydown-THREE', () => this.handleKeyPress(2));
+
+    // resize 监听
+    this.scale.on('resize', this.handleResize, this);
+    this.events.once('shutdown', () => {
+      this.scale.off('resize', this.handleResize, this);
+    });
+  }
+
+  // ── UI 构建（create + resize 时调用） ─────────
+
+  private buildUI(): void {
+    const isTouch = this.sys.game.device.input.touch;
+
+    // 装饰性迷你棋盘
+    this.drawMiniBoardPreview();
+
+    // 标题发光层
+    this.add
+      .text(layout.width / 2, layout.height / 4 - layout.scale(20), 'XIANGQI', {
+        fontSize: layout.fontSize(48),
+        color: '#d4a76a',
+        fontFamily: 'monospace',
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5)
+      .setAlpha(0.3)
+      .setBlendMode(Phaser.BlendModes.ADD);
+
+    // 标题主体
+    this.titleText = this.add
+      .text(layout.width / 2, layout.height / 4 - layout.scale(22), 'XIANGQI', {
+        fontSize: layout.fontSize(48),
+        color: '#ffffff',
+        fontFamily: 'monospace',
+        fontStyle: 'bold',
+        stroke: '#000000',
+        strokeThickness: 4,
+      })
+      .setOrigin(0.5);
+
+    this.tweens.add({
+      targets: this.titleText,
+      y: '-=6',
+      duration: 1800,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+
+    // 中文副标题
+    this.add
+      .text(layout.width / 2, layout.height / 4 + layout.scale(15), '中国象棋', {
+        fontSize: layout.fontSize(16),
+        color: '#8b7355',
+        fontFamily: 'serif',
+      })
+      .setOrigin(0.5);
+
+    // 阶段提示
+    const subLabel = this.phase === 'difficulty' ? '- Select Difficulty -' : '- Select Mode -';
+    this.subtitleText = this.add
+      .text(layout.width / 2, layout.height / 4 + layout.scale(38), subLabel, {
+        fontSize: layout.fontSize(14),
+        color: '#8b7355',
+        fontFamily: 'monospace',
+      })
+      .setOrigin(0.5);
+
+    // 根据当前阶段创建按钮
+    if (this.phase === 'mode') {
+      this.createModeButtons(isTouch);
+    } else {
+      this.createDifficultyButtons(isTouch);
+    }
+
+    // 返回大厅
+    const backLabel = isTouch ? '[ Back ]' : '[ ESC ] Back to Hub';
+    const backText = this.add.text(layout.scale(20), layout.scale(20), backLabel, {
+      fontSize: layout.fontSize(14),
+      color: '#888888',
+      fontFamily: 'monospace',
+    });
+    backText.setPadding(10, 8, 10, 8);
+    backText.setInteractive();
+    backText.on('pointerdown', () => this.goToHub());
+  }
+
+  // ── resize 处理 ───────────────────────────────
+
+  private handleResize(): void {
+    this.children.removeAll(true);
+    this.tweens.killAll();
+    this.modeTexts = [];
+    this.diffObjects = [];
+    this.buildUI();
   }
 
   // ── 模式选择 ──────────────────────────────────
 
   private createModeButtons(isTouch: boolean): void {
-    const centerY = GAME_HEIGHT / 2 + 30;
+    const centerY = layout.height / 2 + layout.scale(30);
 
     const modes = [
       {
@@ -130,8 +160,8 @@ export class XiangqiTitleScene extends Phaser.Scene {
 
     modes.forEach((m, i) => {
       const text = this.add
-        .text(GAME_WIDTH / 2, centerY + i * 45, m.label, {
-          fontSize: '20px',
+        .text(layout.width / 2, centerY + i * layout.scale(45), m.label, {
+          fontSize: layout.fontSize(20),
           color: '#d4a76a',
           fontFamily: 'monospace',
         })
@@ -164,7 +194,11 @@ export class XiangqiTitleScene extends Phaser.Scene {
     for (const t of this.modeTexts) t.setVisible(false);
 
     const isTouch = this.sys.game.device.input.touch;
-    const centerY = GAME_HEIGHT / 2 + 15;
+    this.createDifficultyButtons(isTouch);
+  }
+
+  private createDifficultyButtons(isTouch: boolean): void {
+    const centerY = layout.height / 2 + layout.scale(15);
     const difficulties = [
       XiangqiDifficulty.EASY,
       XiangqiDifficulty.MEDIUM,
@@ -176,11 +210,11 @@ export class XiangqiTitleScene extends Phaser.Scene {
       const keyHint = isTouch ? '' : `[ ${i + 1} ] `;
       const text = this.add
         .text(
-          GAME_WIDTH / 2,
-          centerY + i * 42,
+          layout.width / 2,
+          centerY + i * layout.scale(42),
           `${keyHint}${config.name}`,
           {
-            fontSize: '20px',
+            fontSize: layout.fontSize(20),
             color: '#d4a76a',
             fontFamily: 'monospace',
           }
@@ -190,12 +224,12 @@ export class XiangqiTitleScene extends Phaser.Scene {
         .setInteractive({ useHandCursor: true });
 
       // 难度颜色指示
-      const dotX = text.x - text.width / 2 - 20;
+      const dotX = text.x - text.width / 2 - layout.scale(20);
       const dot = this.add.graphics();
       dot.fillStyle(config.boardColor, 1);
-      dot.fillCircle(dotX, centerY + i * 42, 6);
+      dot.fillCircle(dotX, centerY + i * layout.scale(42), layout.scale(6, 3));
       dot.lineStyle(1, config.gridColor, 1);
-      dot.strokeCircle(dotX, centerY + i * 42, 6);
+      dot.strokeCircle(dotX, centerY + i * layout.scale(42), layout.scale(6, 3));
 
       text.on('pointerover', () => text.setColor('#ffffff'));
       text.on('pointerout', () => text.setColor('#d4a76a'));
@@ -207,8 +241,8 @@ export class XiangqiTitleScene extends Phaser.Scene {
     });
 
     const backHint = this.add
-      .text(GAME_WIDTH / 2, centerY + 140, 'ESC: Back', {
-        fontSize: '12px',
+      .text(layout.width / 2, centerY + layout.scale(140), 'ESC: Back', {
+        fontSize: layout.fontSize(12),
         color: '#666655',
         fontFamily: 'monospace',
       })
@@ -258,13 +292,13 @@ export class XiangqiTitleScene extends Phaser.Scene {
     const g = this.add.graphics();
     g.setAlpha(0.12);
 
-    const cellSize = 24;
+    const cellSize = layout.scale(24, 14);
     const cols = 9;
     const rows = 10;
     const gridW = (cols - 1) * cellSize;
     const gridH = (rows - 1) * cellSize;
-    const startX = GAME_WIDTH / 2 - gridW / 2;
-    const startY = GAME_HEIGHT / 2 - gridH / 2 + 20;
+    const startX = layout.width / 2 - gridW / 2;
+    const startY = layout.height / 2 - gridH / 2 + layout.scale(20);
 
     // 横线
     g.lineStyle(1, 0xd4a76a, 1);
@@ -284,17 +318,17 @@ export class XiangqiTitleScene extends Phaser.Scene {
     }
 
     // 几个装饰棋子
-    const r = 8;
+    const stoneR = layout.scale(8, 4);
     // 红方
     g.fillStyle(0xcc2222, 0.8);
-    g.fillCircle(startX + 4 * cellSize, startY + 9 * cellSize, r);
-    g.fillCircle(startX + 0 * cellSize, startY + 9 * cellSize, r);
-    g.fillCircle(startX + 8 * cellSize, startY + 9 * cellSize, r);
+    g.fillCircle(startX + 4 * cellSize, startY + 9 * cellSize, stoneR);
+    g.fillCircle(startX + 0 * cellSize, startY + 9 * cellSize, stoneR);
+    g.fillCircle(startX + 8 * cellSize, startY + 9 * cellSize, stoneR);
 
     // 黑方
     g.fillStyle(0x444444, 0.8);
-    g.fillCircle(startX + 4 * cellSize, startY + 0 * cellSize, r);
-    g.fillCircle(startX + 0 * cellSize, startY + 0 * cellSize, r);
-    g.fillCircle(startX + 8 * cellSize, startY + 0 * cellSize, r);
+    g.fillCircle(startX + 4 * cellSize, startY + 0 * cellSize, stoneR);
+    g.fillCircle(startX + 0 * cellSize, startY + 0 * cellSize, stoneR);
+    g.fillCircle(startX + 8 * cellSize, startY + 0 * cellSize, stoneR);
   }
 }

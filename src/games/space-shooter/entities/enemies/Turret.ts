@@ -3,7 +3,7 @@
 
 import Phaser from 'phaser';
 import { ShooterEnemy } from '../ShooterEnemy';
-import { GAME_WIDTH } from '@shared/utils/Constants';
+import { layout } from '@shared/utils/Constants';
 import { PowerUpType, SHOOTER_COLORS } from '../../data/ShooterConstants';
 import { BulletPool } from '../../systems/BulletPool';
 
@@ -73,7 +73,7 @@ export class Turret extends ShooterEnemy {
     // 微小水平漂移
     this.x += Math.sin(time * 0.001) * 0.3;
     // 限制在屏幕内
-    this.x = Phaser.Math.Clamp(this.x, 20, GAME_WIDTH - 20);
+    this.x = Phaser.Math.Clamp(this.x, 20, layout.width - 20);
   }
 
   /** 向玩家发射瞄准弹 */
@@ -140,7 +140,7 @@ export class Turret extends ShooterEnemy {
   isOffScreen(): boolean {
     // 悬停状态下只在飞出底部或两侧时回收
     if (this.hovering) {
-      return this.y > 500 || this.x < -50 || this.x > 850;
+      return this.y > layout.height + 50 || this.x < -50 || this.x > layout.width + 50;
     }
     return super.isOffScreen();
   }

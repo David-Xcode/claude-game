@@ -6,7 +6,7 @@
 
 import Phaser from 'phaser';
 import { ShooterEnemy } from '../ShooterEnemy';
-import { GAME_WIDTH } from '@shared/utils/Constants';
+import { layout } from '@shared/utils/Constants';
 import { PowerUpType, SHOOTER_COLORS } from '../../data/ShooterConstants';
 import { BulletPool } from '../../systems/BulletPool';
 import { BossBase } from './BossBase';
@@ -98,7 +98,7 @@ export class Boss2SkyFortress extends BossBase {
   private phase2Behavior(time: number, delta: number): void {
     // 8 字移动
     const t = this.moveTime * 0.001;
-    this.x = GAME_WIDTH / 2 + Math.sin(t) * (GAME_WIDTH / 2 - W / 2 - 20);
+    this.x = layout.width / 2 + Math.sin(t) * (layout.width / 2 - W / 2 - 20);
     this.y = this.targetY + Math.sin(t * 2) * 20;
 
     // 侧炮
@@ -126,7 +126,7 @@ export class Boss2SkyFortress extends BossBase {
   private phase3Behavior(time: number, delta: number): void {
     // 缓慢移动
     const t = this.moveTime * 0.0008;
-    this.x = GAME_WIDTH / 2 + Math.sin(t) * (GAME_WIDTH / 2 - W / 2 - 30);
+    this.x = layout.width / 2 + Math.sin(t) * (layout.width / 2 - W / 2 - 30);
 
     // 虚弱窗口内不攻击
     if (time < this.vulnerableUntil) {

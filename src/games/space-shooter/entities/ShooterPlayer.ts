@@ -1,7 +1,7 @@
 // 玩家飞船：Claude 吉祥物坐在太空战机上，8 方向移动、武器射击、受伤无敌
 
 import Phaser from 'phaser';
-import { GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { layout } from '@shared/utils/Constants';
 import { SHOOTER, SHOOTER_COLORS, SHOOTER_DEPTH, WeaponType } from '../data/ShooterConstants';
 import { BulletPool } from '../systems/BulletPool';
 import { ShooterWeaponSystem } from '../systems/ShooterWeaponSystem';
@@ -278,9 +278,9 @@ export class ShooterPlayer extends Phaser.Physics.Arcade.Sprite {
     const halfH = HALF_HEIGHT;
 
     if (this.x < halfW) this.x = halfW;
-    if (this.x > GAME_WIDTH - halfW) this.x = GAME_WIDTH - halfW;
+    if (this.x > layout.width - halfW) this.x = layout.width - halfW;
     if (this.y < halfH) this.y = halfH;
-    if (this.y > GAME_HEIGHT - halfH) this.y = GAME_HEIGHT - halfH;
+    if (this.y > layout.height - halfH) this.y = layout.height - halfH;
   }
 
   /** 更新引擎火焰：交替切换两帧纹理 */

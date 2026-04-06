@@ -80,6 +80,9 @@ export class XiangqiGameScene extends Phaser.Scene {
       }
     });
 
+    // 注册 resize 监听器，棋盘动态适配
+    this.boardRenderer.registerResizeHandler();
+
     this.events.on('shutdown', this.shutdown, this);
   }
 
@@ -223,6 +226,7 @@ export class XiangqiGameScene extends Phaser.Scene {
   }
 
   private shutdown(): void {
+    this.boardRenderer.removeResizeHandler();
     this.input.removeAllListeners();
     this.input.keyboard?.removeAllListeners();
     if (this.scene.isActive(SceneKey.XIANGQI_HUD) || this.scene.isPaused(SceneKey.XIANGQI_HUD)) {

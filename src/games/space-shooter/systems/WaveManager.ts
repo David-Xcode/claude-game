@@ -3,7 +3,7 @@
 // 所有波次完成后生成 Boss，Boss 被击败标记关卡完成
 
 import Phaser from 'phaser';
-import { GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { layout } from '@shared/utils/Constants';
 import { ShooterEnemyType, PowerUpType } from '../data/ShooterConstants';
 import { ShooterEnemy } from '../entities/ShooterEnemy';
 import { EnemyFactory, EnemyCreateConfig } from '../entities/enemies/EnemyFactory';
@@ -139,7 +139,7 @@ export class WaveManager {
 
           const pos = positions[i];
           // Bomber 方向由生成位置决定（左半屏 → 向右飞，右半屏 → 向左飞）
-          const fromLeft = pos.x < GAME_WIDTH / 2;
+          const fromLeft = pos.x < layout.width / 2;
           const config: EnemyCreateConfig = {
             playerRef: this.playerRef,
             bulletPool: this.enemyBulletPool,
@@ -249,7 +249,7 @@ export class WaveManager {
       }
     }
     // 最终兜底：返回一个虚拟目标
-    return this.scene.add.sprite(GAME_WIDTH / 2, GAME_HEIGHT - 60, '__DEFAULT') as any;
+    return this.scene.add.sprite(layout.width / 2, layout.height - 60, '__DEFAULT') as any;
   }
 
   // ═══════════════════════════════════════════════

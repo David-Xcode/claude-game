@@ -1,7 +1,7 @@
 // 射击游戏核心场景：整合所有系统，处理阶段推进、事件广播
 
 import Phaser from 'phaser';
-import { SceneKey, GAME_WIDTH, GAME_HEIGHT } from '@shared/utils/Constants';
+import { SceneKey, layout } from '@shared/utils/Constants';
 import { SHOOTER, SHOOTER_DEPTH, SHOOTER_EVENTS } from '../data/ShooterConstants';
 import { ScrollingBackground } from '../systems/ScrollingBackground';
 import { ShooterPlayer } from '../entities/ShooterPlayer';
@@ -85,7 +85,10 @@ export class ShooterGameScene extends Phaser.Scene {
     this.physics.world.gravity.y = 0;
 
     // 世界边界（略大于画面，允许子弹/敌人在屏幕外缓冲）
-    this.physics.world.setBounds(-50, -80, GAME_WIDTH + 100, GAME_HEIGHT + 160);
+    this.physics.world.setBounds(-50, -80, layout.width + 100, layout.height + 160);
+
+    // 监听 resize，更新世界边界和玩家重生位置
+    this.scale.on('resize', this.handleResize, this);
 
     // 初始化滚动背景
     this.background = new ScrollingBackground(this, this.currentStage);
@@ -104,8 +107,8 @@ export class ShooterGameScene extends Phaser.Scene {
     // 初始化玩家
     this.player = new ShooterPlayer(
       this,
-      GAME_WIDTH / 2,
-      GAME_HEIGHT - 60,
+      layout.width / 2,
+      layout.height - 60,
       this.playerBullets
     );
 
@@ -261,7 +264,7 @@ export class ShooterGameScene extends Phaser.Scene {
     this.time.delayedCall(1500, () => {
       if (!this.sys?.isActive()) return;
 
-      this.player.respawn(GAME_WIDTH / 2, GAME_HEIGHT - 60);
+      this.player.respawn(layout.width / 2, layout.height - 60);
       this.events.emit(SHOOTER_EVENTS.HEALTH_CHANGED, this.player.health);
       this.events.emit(SHOOTER_EVENTS.BOMBS_CHANGED, this.player.bombs);
       this.respawning = false;
@@ -300,8 +303,8 @@ export class ShooterGameScene extends Phaser.Scene {
     this.enemyBullets.clear();
 
     // 显示 "STAGE CLEAR" 文字
-    const clearText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 30, 'STAGE CLEAR', {
-      fontSize: '36px',
+    const clearText = this.add.text(layout.width / 2, layout.height / 2 - 30, 'STAGE CLEAR', {
+      fontSize: layout.fontSize(36),
       color: '#ffdd44',
       fontFamily: 'monospace',
       fontStyle: 'bold',
@@ -313,8 +316,8 @@ export class ShooterGameScene extends Phaser.Scene {
     clearText.setAlpha(0);
 
     // 分数结算文字
-    const tallyText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 20, '', {
-      fontSize: '18px',
+    const tallyText = this.add.text(layout.width / 2, layout.height / 2 + 20, '', {
+      fontSize: layout.fontSize(18),
       color: '#ffffff',
       fontFamily: 'monospace',
       stroke: '#000000',
@@ -332,7 +335,7 @@ export class ShooterGameScene extends Phaser.Scene {
     this.tweens.add({
       targets: clearText,
       alpha: 1,
-      y: GAME_HEIGHT / 2 - 40,
+      y: layout.height / 2 - 40,
       duration: 600,
       ease: 'Back.easeOut',
       onComplete: () => {
@@ -427,11 +430,21 @@ export class ShooterGameScene extends Phaser.Scene {
   }
 
   // ═══════════════════════════════════════════════
+  // Resize 处理
+  // ═══════════════════════════════════════════════
+
+  /** 窗口尺寸变化时更新世界边界 */
+  private handleResize(): void {
+    this.physics.world.setBounds(-50, -80, layout.width + 100, layout.height + 160);
+  }
+
+  // ═══════════════════════════════════════════════
   // 场景清理
   // ═══════════════════════════════════════════════
 
   /** 场景停止时清理资源，防止内存泄漏 */
   shutdown(): void {
+    this.scale.off('resize', this.handleResize, this);
     this.background?.destroy();
     this.playerBullets?.clear();
     this.enemyBullets?.clear();
