@@ -29,6 +29,12 @@ export const GAME_CARDS: GameCardDef[] = [
     keyboardKey: 'THREE',
     drawPreview: drawGomokuPreview,
   },
+  {
+    title: 'Xiangqi',
+    sceneKey: SceneKey.XIANGQI_TITLE,
+    keyboardKey: 'FOUR',
+    drawPreview: drawXiangqiPreview,
+  },
 ];
 
 // ── 绘制 Pixel Adventure 预览（迷你 Claude 角色站在绿色平台上） ──
@@ -187,4 +193,78 @@ function drawGomokuPreview(g: Phaser.GameObjects.Graphics): void {
   g.fillCircle(ox + 2 * cellSize - 2, oy + 1 * cellSize - 2, 2.5);
   g.fillCircle(ox + 1 * cellSize - 2, oy + 2 * cellSize - 2, 2.5);
   g.fillCircle(ox + 3 * cellSize - 2, oy + 3 * cellSize - 2, 2.5);
+}
+
+// ── 绘制 Xiangqi 预览（迷你象棋棋盘 + 红黑棋子） ──
+
+function drawXiangqiPreview(g: Phaser.GameObjects.Graphics): void {
+  const cellSize = 14;
+  const cols = 5; // 简化的 5 列
+  const rows = 6; // 简化的 6 行
+  const gridW = (cols - 1) * cellSize;
+  const gridH = (rows - 1) * cellSize;
+  const ox = -gridW / 2;
+  const oy = -gridH / 2 - 5;
+
+  // 棋盘底色
+  g.fillStyle(0xd4a76a, 0.8);
+  g.fillRoundedRect(ox - 10, oy - 10, gridW + 20, gridH + 20, 4);
+
+  // 网格线
+  g.lineStyle(1, 0x5c3d1a, 0.7);
+  for (let r = 0; r < rows; r++) {
+    g.lineBetween(ox, oy + r * cellSize, ox + gridW, oy + r * cellSize);
+  }
+  for (let c = 0; c < cols; c++) {
+    const x = ox + c * cellSize;
+    if (c === 0 || c === cols - 1) {
+      g.lineBetween(x, oy, x, oy + gridH);
+    } else {
+      // 河界断开
+      g.lineBetween(x, oy, x, oy + 2 * cellSize);
+      g.lineBetween(x, oy + 3 * cellSize, x, oy + gridH);
+    }
+  }
+
+  // 九宫斜线（简化）
+  g.lineStyle(1, 0x5c3d1a, 0.4);
+  g.lineBetween(ox + 1 * cellSize, oy, ox + 3 * cellSize, oy + 2 * cellSize);
+  g.lineBetween(ox + 3 * cellSize, oy, ox + 1 * cellSize, oy + 2 * cellSize);
+  g.lineBetween(ox + 1 * cellSize, oy + 3 * cellSize, ox + 3 * cellSize, oy + 5 * cellSize);
+  g.lineBetween(ox + 3 * cellSize, oy + 3 * cellSize, ox + 1 * cellSize, oy + 5 * cellSize);
+
+  const pr = 6; // 棋子半径
+
+  // 黑方棋子
+  g.fillStyle(0xeeeedd, 1);
+  g.fillCircle(ox + 2 * cellSize, oy, pr);
+  g.fillCircle(ox + 0 * cellSize, oy, pr);
+  g.fillCircle(ox + 4 * cellSize, oy, pr);
+  // 黑方边框
+  g.lineStyle(1, 0x333333, 0.8);
+  g.strokeCircle(ox + 2 * cellSize, oy, pr);
+  g.strokeCircle(ox + 0 * cellSize, oy, pr);
+  g.strokeCircle(ox + 4 * cellSize, oy, pr);
+
+  // 红方棋子
+  g.fillStyle(0xffeedd, 1);
+  g.fillCircle(ox + 2 * cellSize, oy + 5 * cellSize, pr);
+  g.fillCircle(ox + 0 * cellSize, oy + 5 * cellSize, pr);
+  g.fillCircle(ox + 4 * cellSize, oy + 5 * cellSize, pr);
+  // 红方边框
+  g.lineStyle(1, 0xcc2222, 0.8);
+  g.strokeCircle(ox + 2 * cellSize, oy + 5 * cellSize, pr);
+  g.strokeCircle(ox + 0 * cellSize, oy + 5 * cellSize, pr);
+  g.strokeCircle(ox + 4 * cellSize, oy + 5 * cellSize, pr);
+
+  // 中间散落几个棋子
+  g.fillStyle(0xeeeedd, 1);
+  g.fillCircle(ox + 1 * cellSize, oy + 2 * cellSize, pr);
+  g.lineStyle(1, 0x333333, 0.8);
+  g.strokeCircle(ox + 1 * cellSize, oy + 2 * cellSize, pr);
+
+  g.fillStyle(0xffeedd, 1);
+  g.fillCircle(ox + 3 * cellSize, oy + 3 * cellSize, pr);
+  g.lineStyle(1, 0xcc2222, 0.8);
+  g.strokeCircle(ox + 3 * cellSize, oy + 3 * cellSize, pr);
 }

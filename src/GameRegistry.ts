@@ -22,6 +22,12 @@ import { GomokuGameScene } from '@games/gomoku/scenes/GomokuGameScene';
 import { GomokuHUDScene } from '@games/gomoku/scenes/GomokuHUDScene';
 import { GomokuPauseScene } from '@games/gomoku/scenes/GomokuPauseScene';
 import { GomokuGameOverScene } from '@games/gomoku/scenes/GomokuGameOverScene';
+// Xiangqi
+import { XiangqiTitleScene } from '@games/xiangqi/scenes/XiangqiTitleScene';
+import { XiangqiGameScene } from '@games/xiangqi/scenes/XiangqiGameScene';
+import { XiangqiHUDScene } from '@games/xiangqi/scenes/XiangqiHUDScene';
+import { XiangqiPauseScene } from '@games/xiangqi/scenes/XiangqiPauseScene';
+import { XiangqiGameOverScene } from '@games/xiangqi/scenes/XiangqiGameOverScene';
 
 export const CORE_SCENES = [BootScene, HubScene];
 
@@ -32,6 +38,8 @@ export const GAME_SCENES = [
   ShooterTitleScene, ShooterGameScene, ShooterHUDScene, ShooterPauseScene, ShooterGameOverScene, ShooterVictoryScene,
   // Gomoku
   GomokuTitleScene, GomokuGameScene, GomokuHUDScene, GomokuPauseScene, GomokuGameOverScene,
+  // Xiangqi
+  XiangqiTitleScene, XiangqiGameScene, XiangqiHUDScene, XiangqiPauseScene, XiangqiGameOverScene,
 ];
 
 export const ALL_SCENES = [...CORE_SCENES, ...GAME_SCENES];

@@ -2,6 +2,7 @@
 
 import { SceneKey } from './Constants';
 import { GomokuMode, GomokuDifficulty } from '@games/gomoku/data/GomokuConstants';
+import { XiangqiMode, XiangqiDifficulty, Side as XiangqiSide } from '@games/xiangqi/data/XiangqiConstants';
 
 export interface SceneDataMap {
   [SceneKey.GAME]: { level: number; score: number; lives: number };
@@ -16,6 +17,13 @@ export interface SceneDataMap {
     isDraw: boolean;
     mode: GomokuMode;
     difficulty: GomokuDifficulty;
+    moveCount: number;
+  };
+  [SceneKey.XIANGQI_GAME]: { mode: XiangqiMode; difficulty: XiangqiDifficulty };
+  [SceneKey.XIANGQI_GAME_OVER]: {
+    winner: XiangqiSide;
+    mode: XiangqiMode;
+    difficulty: XiangqiDifficulty;
     moveCount: number;
   };
 }

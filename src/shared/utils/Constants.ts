@@ -28,4 +28,10 @@ export enum SceneKey {
   GOMOKU_HUD = 'GomokuHUDScene',
   GOMOKU_PAUSE = 'GomokuPauseScene',
   GOMOKU_GAME_OVER = 'GomokuGameOverScene',
+  // Xiangqi（中国象棋）
+  XIANGQI_TITLE = 'XiangqiTitleScene',
+  XIANGQI_GAME = 'XiangqiGameScene',
+  XIANGQI_HUD = 'XiangqiHUDScene',
+  XIANGQI_PAUSE = 'XiangqiPauseScene',
+  XIANGQI_GAME_OVER = 'XiangqiGameOverScene',
 }
