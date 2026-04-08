@@ -179,7 +179,7 @@ export class GomokuGameScene extends Phaser.Scene {
 
     const delay = Phaser.Math.Between(GOMOKU.AI_DELAY_MIN, GOMOKU.AI_DELAY_MAX);
     this.time.delayedCall(delay, () => {
-      if (this.gameEnded || !this.ai) {
+      if (this.gameEnded || !this.ai || !this.sys.isActive()) {
         this.isAIThinking = false;
         return;
       }
@@ -202,6 +202,7 @@ export class GomokuGameScene extends Phaser.Scene {
 
     // 延迟后切换到结算场景
     this.time.delayedCall(GOMOKU.WIN_DELAY, () => {
+      if (!this.sys.isActive()) return;
       this.scene.stop(SceneKey.GOMOKU_HUD);
       this.cameras.main.fadeOut(500);
       this.cameras.main.once('camerafadeoutcomplete', () => {

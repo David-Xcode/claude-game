@@ -193,7 +193,7 @@ export class XiangqiGameScene extends Phaser.Scene {
 
     const delay = Phaser.Math.Between(XIANGQI.AI_DELAY_MIN, XIANGQI.AI_DELAY_MAX);
     this.time.delayedCall(delay, () => {
-      if (this.gameEnded || !this.ai) {
+      if (this.gameEnded || !this.ai || !this.sys.isActive()) {
         this.isAIThinking = false;
         return;
       }
@@ -212,6 +212,7 @@ export class XiangqiGameScene extends Phaser.Scene {
     this.gameEnded = true;
 
     this.time.delayedCall(XIANGQI.WIN_DELAY, () => {
+      if (!this.sys.isActive()) return;
       this.scene.stop(SceneKey.XIANGQI_HUD);
       this.cameras.main.fadeOut(500);
       this.cameras.main.once('camerafadeoutcomplete', () => {
