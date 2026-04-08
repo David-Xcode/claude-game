@@ -221,8 +221,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       duration: 100,
       yoyo: true,
       repeat: 7,
+      // 防止场景已销毁时操作已回收的游戏对象
       onComplete: () => {
-        this.alpha = 1;
+        if (this.scene?.sys?.isActive()) {
+          this.alpha = 1;
+        }
       },
     });
 
