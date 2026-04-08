@@ -110,7 +110,7 @@ export class HubScene extends Phaser.Scene {
   private createTitle(): void {
     // 标题发光效果（底层模糊文字）
     this.add
-      .text(layout.width / 2, 50, 'GAME ARCADE', {
+      .text(layout.width / 2, layout.safeTop + layout.scale(30), 'GAME ARCADE', {
         fontSize: layout.fontSize(42),
         color: '#4488ff',
         fontFamily: 'monospace',
@@ -122,7 +122,7 @@ export class HubScene extends Phaser.Scene {
 
     // 标题主体
     this.add
-      .text(layout.width / 2, 50, 'GAME ARCADE', {
+      .text(layout.width / 2, layout.safeTop + layout.scale(30), 'GAME ARCADE', {
         fontSize: layout.fontSize(40),
         color: '#ffffff',
         fontFamily: 'monospace',
@@ -133,7 +133,7 @@ export class HubScene extends Phaser.Scene {
 
     // 副标题
     this.add
-      .text(layout.width / 2, 85, '- Choose Your Game -', {
+      .text(layout.width / 2, layout.safeTop + layout.scale(60), '- Choose Your Game -', {
         fontSize: layout.fontSize(14),
         color: '#4488aa',
         fontFamily: 'monospace',
