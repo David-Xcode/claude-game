@@ -360,6 +360,8 @@ export class ShooterPlayer extends Phaser.Physics.Arcade.Sprite {
       duration: 500,
       ease: 'Power2',
       onComplete: () => {
+        // 场景已销毁时跳过回调，防止访问无效对象
+        if (!this.scene?.sys?.isActive()) return;
         this.setVisible(false);
         this.onDeath?.();
       },
