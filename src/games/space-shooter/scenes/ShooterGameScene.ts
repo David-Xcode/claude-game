@@ -451,6 +451,8 @@ export class ShooterGameScene extends Phaser.Scene {
     this.waveManager?.destroy();
     // 只移除自定义事件，不破坏 Phaser 内部生命周期事件
     Object.values(SHOOTER_EVENTS).forEach(evt => this.events.removeAllListeners(evt));
+    // 清理不在 SHOOTER_EVENTS 枚举中的自定义事件
+    this.events.removeAllListeners('bossExplosion');
     this.events.off('shutdown', this.shutdown, this);
   }
 }
