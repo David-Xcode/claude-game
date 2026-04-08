@@ -45,6 +45,7 @@ export class WaveManager {
 
   /** 玩家引用（通过 scene 的 children 获取） */
   private playerRef!: Phaser.GameObjects.Sprite;
+  private onEnemyDrop: (x: number, y: number, type: PowerUpType) => void;
 
   constructor(
     scene: Phaser.Scene,
@@ -63,9 +64,10 @@ export class WaveManager {
     EnemyFactory.preloadTextures(scene);
 
     // 监听敌人死亡掉落事件（替代 monkey-patch die()）
-    this.scene.events.on('enemyDrop', (x: number, y: number, type: PowerUpType) => {
+    this.onEnemyDrop = (x: number, y: number, type: PowerUpType) => {
       this.spawnPowerUp(x, y, type);
-    });
+    };
+    this.scene.events.on('enemyDrop', this.onEnemyDrop);
 
     // 加载波次数据
     this.waves = this.getWaveDefinitions(stageIndex);
@@ -258,5 +260,10 @@ export class WaveManager {
 
   private getWaveDefinitions(stage: number): WaveDefinition[] {
     return STAGE_WAVES[stage] ?? STAGE_WAVES[0];
+  }
+
+  /** 清理事件监听器，防止场景重启时泄漏 */
+  destroy(): void {
+    this.scene.events.off('enemyDrop', this.onEnemyDrop);
   }
 }
