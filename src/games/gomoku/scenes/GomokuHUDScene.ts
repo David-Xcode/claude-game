@@ -123,7 +123,7 @@ export class GomokuHUDScene extends Phaser.Scene {
 
     // ── 顶部中央：回合数 ──
     this.moveText = this.add
-      .text(layout.width / 2, layout.scale(16), `Move: ${this.currentMoveCount}`, {
+      .text(layout.width / 2, layout.safeTop + layout.scale(16), `Move: ${this.currentMoveCount}`, {
         fontSize: layout.fontSize(14),
         color: '#888888',
         fontFamily: 'monospace',
@@ -135,7 +135,7 @@ export class GomokuHUDScene extends Phaser.Scene {
     const isTouch = this.sys.game.device.input.touch;
     if (isTouch) {
       const pauseBtn = this.add
-        .text(layout.width - layout.scale(30), layout.scale(16), '❚❚', {
+        .text(layout.width - layout.scale(30), layout.safeTop + layout.scale(16), '❚❚', {
           fontSize: layout.fontSize(18),
           color: '#888888',
           fontFamily: 'monospace',
