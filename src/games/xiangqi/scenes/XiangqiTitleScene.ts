@@ -122,7 +122,7 @@ export class XiangqiTitleScene extends Phaser.Scene {
 
     // 返回大厅
     const backLabel = isTouch ? '[ Back ]' : '[ ESC ] Back to Hub';
-    const backText = this.add.text(layout.scale(20), layout.scale(20), backLabel, {
+    const backText = this.add.text(layout.safeLeft + layout.scale(20), layout.safeTop + layout.scale(20), backLabel, {
       fontSize: layout.fontSize(14),
       color: '#888888',
       fontFamily: 'monospace',
