@@ -265,7 +265,7 @@ export class Boss3Mothership extends BossBase {
         // 白色闪烁
         this.setTint(0xffffff);
         this.scene.time.delayedCall(80, () => {
-          if (this.visible) this.clearTint();
+          if (this.scene?.sys?.isActive() && this.visible) this.clearTint();
         });
 
         // 发射爆炸效果事件（由 ExplosionManager 处理）
@@ -275,6 +275,7 @@ export class Boss3Mothership extends BossBase {
 
     // 最终销毁
     this.scene.time.delayedCall(explosionCount * 350 + 200, () => {
+      if (!this.scene?.sys?.isActive()) return;
       this.setActive(false);
       this.setVisible(false);
     });
