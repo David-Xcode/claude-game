@@ -139,8 +139,8 @@ export class ShooterTitleScene extends Phaser.Scene {
 
     // 触屏/指针：点击任意位置开始（排除返回按钮区域）
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      // 排除左上角返回按钮区域（40x36 以内不触发开始）
-      if (pointer.x < 150 && pointer.y < 50) return;
+      // 排除左上角返回按钮区域（基于 layout 缩放计算）
+      if (pointer.x < layout.safeLeft + layout.scale(160) && pointer.y < layout.safeTop + layout.scale(50)) return;
       startGame();
     });
   }
